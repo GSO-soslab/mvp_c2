@@ -10,6 +10,8 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('lib/' + package_name, [package_name + '/proto/mvp_cmd_dccl_pb2.py']),
+        ('share/' + package_name + '/proto', [package_name + '/proto/mvp_cmd_dccl.proto']),
     ],
     install_requires=['setuptools', 'std_msgs','nav_msgs', 'dccl'],
     zip_safe=True,

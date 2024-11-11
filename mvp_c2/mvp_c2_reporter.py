@@ -6,7 +6,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import ByteMultiArray
 
 # sys.path.append('../proto')  # Adjust path if needed
-# import mvp_cmd_dccl_pb2
+import mvp_cmd_dccl_pb2
 import time 
 from ament_index_python.packages import get_package_share_directory
 
@@ -21,7 +21,7 @@ class MvpC2Reporter(Node):
     def __init__(self):
         super().__init__('mvp_c2_reporter')
     
-    #     #susbcribe to different topics
+        #susbcribe to different topics
     #     self.odom_sub = self.create_subscription(Odometry, 'odometry', self.odom_callback, 10)
 
     #     #DCCL
