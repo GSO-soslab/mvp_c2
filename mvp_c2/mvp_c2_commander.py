@@ -9,6 +9,7 @@ from std_msgs.msg import UInt8MultiArray
 import mvp_cmd_dccl_pb2
 import time 
 from ament_index_python.packages import get_package_share_directory
+from dccl_checksum import check_dccl, package_dccl
 
 package_name = 'mvp_c2'
 
@@ -34,50 +35,23 @@ class MvpC2Commander(Node):
         self.destination =1
         print('commander initialized', flush=True)
 
-    def check_dccl(self, data):
-        ##check the header
-        if data[:3] != bytearray([36, 36, 36]): 
-            print("Error: Header imcomplete")
-            return False
-        ##check the * char
-        if data[-4] != 42:
-            print("Error: Data does not end with '*'")
-            return False
-        #get checksum string
-        checksum_str = bytes([data[-3], data[-2]]).decode('ascii')
-        #compute checksum
-        calculated_checksum = 0
-        for byte in data[3:-4]: 
-            calculated_checksum ^= byte
-        # Format the checksum 
-        calculated_checksum_str = f"{calculated_checksum:02X}"
-        
-        #compare checksum with the calculated checksum
-        if calculated_checksum_str == checksum_str:
-            print("Data is complete and valid.")
-            data_extracted = data[3:-4]
-            data_out = bytes(data_extracted)
-            return True, data_out
-        else:
-            print("Error: Checksum does not match")
-            return False
 
     def dccl_reporter_callback(self, msg):
         # print("got dccl", flush=True)
-        flag, data = self.check_dccl(msg.data)
+        flag, data = check_dccl(msg.data)
         if flag == True:
-            print(data, flush=True)
             message_id = self.dccl_obj.id(data)
-            print(message_id, flush = True)
-        # try:
-        #     self.dccl_obj.load('Odometry')
-            
-        #     decoded_msg = self.dccl_obj.decode(byte_array)
-        #     print(decoded_msg)
-           
-        # except Exception as e:
-        #     # Print the exception message for debugging
-        #     print(f"Decoding error: {e}", flush=True)
+            # print(message_id, flush = True)
+            #odometry 
+            if message_id == 3:
+                try:
+                    self.dccl_obj.load('Odometry')
+                    decoded_msg = self.dccl_obj.decode(data)
+                    print(decoded_msg, flush = True)
+                
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
 
 def main(args=None):
     rclpy.init(args=args)

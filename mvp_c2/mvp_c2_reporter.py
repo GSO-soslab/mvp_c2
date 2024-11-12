@@ -4,6 +4,7 @@ import dccl
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from std_msgs.msg import UInt8MultiArray
+from dccl_checksum import check_dccl, package_dccl
 
 # sys.path.append('../proto')  # Adjust path if needed
 import mvp_cmd_dccl_pb2
@@ -34,15 +35,6 @@ class MvpC2Reporter(Node):
         self.destination =2
         print("reporter initialized", flush=True)
 
-    def package_dccl(self, data):
-        # Calculate the checksum for the NMEA string
-        checksum = 0
-        for byte in data:
-            checksum ^= byte     
-        ender_bytes = f"*{checksum:02X}"
-        data_out = bytearray('$$$', 'ascii') + data +  bytearray(ender_bytes+'\n', 'ascii')
-        return data_out
-
     def odom_callback(self, msg):
         print("got odometry")
         self.dccl_obj.load('Odometry')
@@ -70,7 +62,7 @@ class MvpC2Reporter(Node):
         
         dccl_msg = UInt8MultiArray()
         dccl_msg.data = self.dccl_obj.encode(proto)
-        dccl_msg.data = self.package_dccl(dccl_msg.data)
+        dccl_msg.data = package_dccl(dccl_msg.data)
         # print(dccl_msg.data, flush = True)
         # print(len(dccl_msg.data), flush = True)
         self.ddcl_reporter_pub.publish(dccl_msg)
