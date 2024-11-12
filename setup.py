@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+import os
+from glob import glob
 
 package_name = 'mvp_c2'
 
@@ -12,6 +14,7 @@ setup(
         ('share/' + package_name, ['package.xml']),
         ('lib/' + package_name, [package_name + '/proto/mvp_cmd_dccl_pb2.py']),
         ('share/' + package_name + '/proto', [package_name + '/proto/mvp_cmd_dccl.proto']),
+        (os.path.join('share', package_name, 'launch'), glob('launch/*')),
     ],
     install_requires=['setuptools', 'std_msgs','nav_msgs', 'dccl'],
     zip_safe=True,
@@ -23,7 +26,8 @@ setup(
     entry_points={
         'console_scripts': [
             # 'my_node = mvp_c2.my_node:main'
-            'mvp_c2_reporter = mvp_c2.mvp_c2_reporter:main'
+            'mvp_c2_reporter = mvp_c2.mvp_c2_reporter:main',
+            'mvp_c2_commander = mvp_c2.mvp_c2_commander:main'
         ],
     },
 )
