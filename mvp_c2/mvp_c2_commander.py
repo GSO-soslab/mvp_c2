@@ -36,14 +36,18 @@ class MvpC2Commander(Node):
 
     def dccl_reporter_callback(self, msg):
         # print("got dccl", flush=True)
-        try:
-            self.dccl_obj.load('PWM')
-            byte_array = bytes(msg.data)
-            decoded_msg = self.dccl_obj.decode(byte_array)
-            print(decoded_msg.id, flush=True)
-        except Exception as e:
-            # Print the exception message for debugging
-            print(f"Decoding error: {e}", flush=True)
+        byte_array = bytes(msg.data)
+        message_id = self.dccl_obj.id(byte_array)
+        print(message_id, flush = True)
+        # try:
+        #     # self.dccl_obj.load('Odometry')
+            
+        #     # decoded_msg = self.dccl_obj.decode(byte_array)
+            
+           
+        # except Exception as e:
+        #     # Print the exception message for debugging
+        #     print(f"Decoding error: {e}", flush=True)
 
 def main(args=None):
     rclpy.init(args=args)

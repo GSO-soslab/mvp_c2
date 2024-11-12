@@ -39,7 +39,6 @@ class MvpC2Reporter(Node):
         print("got odometry")
         self.dccl_obj.load('Odometry')
         proto = mvp_cmd_dccl_pb2.Odometry()
-        proto.id = 3
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
         proto.source = self.source
