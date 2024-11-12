@@ -34,16 +34,46 @@ class MvpC2Commander(Node):
         self.destination =1
         print('commander initialized', flush=True)
 
+    def check_dccl(self, data):
+        ##check the header
+        if data[:3] != bytearray([36, 36, 36]): 
+            print("Error: Header imcomplete")
+            return False
+        ##check the * char
+        if data[-4] != 42:
+            print("Error: Data does not end with '*'")
+            return False
+        #get checksum string
+        checksum_str = bytes([data[-3], data[-2]]).decode('ascii')
+        #compute checksum
+        calculated_checksum = 0
+        for byte in data[3:-4]: 
+            calculated_checksum ^= byte
+        # Format the checksum 
+        calculated_checksum_str = f"{calculated_checksum:02X}"
+        
+        #compare checksum with the calculated checksum
+        if calculated_checksum_str == checksum_str:
+            print("Data is complete and valid.")
+            data_extracted = data[3:-4]
+            data_out = bytes(data_extracted)
+            return True, data_out
+        else:
+            print("Error: Checksum does not match")
+            return False
+
     def dccl_reporter_callback(self, msg):
         # print("got dccl", flush=True)
-        byte_array = bytes(msg.data)
-        message_id = self.dccl_obj.id(byte_array)
-        print(message_id, flush = True)
+        flag, data = self.check_dccl(msg.data)
+        if flag == True:
+            print(data, flush=True)
+            message_id = self.dccl_obj.id(data)
+            print(message_id, flush = True)
         # try:
-        #     # self.dccl_obj.load('Odometry')
+        #     self.dccl_obj.load('Odometry')
             
-        #     # decoded_msg = self.dccl_obj.decode(byte_array)
-            
+        #     decoded_msg = self.dccl_obj.decode(byte_array)
+        #     print(decoded_msg)
            
         # except Exception as e:
         #     # Print the exception message for debugging
