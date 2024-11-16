@@ -18,19 +18,15 @@ class MvpC2UdpRos(Node):
 
         self.udp_obj = UDPInterface(self.udp_type, self.server_ip, self.server_port, 
                                     self.client_ip, self.client_port)
-        
+        print("UDP connection good")
+
         ##subscribe to dccl tx topic
         self.dccl_tx_sub = self.create_subscription(UInt8MultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 10)
 
         ##publish to dccl rx topic
         self.ddcl_rx_pub = self.create_publisher(UInt8MultiArray, 'dccl_msg_rx', 10)
-
-        # if(self.upd_obj != False):
-        if self.udp_obj.is_connected():
-            self.timer = self.create_timer(self.rx_timer, self.dccl_rx_callback)
-            print(self.client_port, flush = True)
-        else:
-            print("Server connection failed.")
+        
+        self.timer = self.create_timer(self.rx_timer, self.dccl_rx_callback)
 
     def dccl_tx_callback(self, msg):
         print("got dccl", flush =True)
@@ -50,7 +46,6 @@ def main(args=None):
     node = MvpC2UdpRos()
     rclpy.spin(node)  # Keep the node running to allow timer execution
     node.destroy_node()
-    node.close_udp()
     rclpy.shutdown()
     
 if __name__ == '__main__':

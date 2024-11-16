@@ -1,0 +1,7 @@
+/mvp_c2/mvp_c2_udp_comm:
+  ros__parameters:
+    type: client
+    server_ip: 192.168.0.123
+    server_port: 5000
+    client_ip: 192.168.0.100
+    client_port: 6000

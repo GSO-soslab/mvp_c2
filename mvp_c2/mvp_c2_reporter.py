@@ -1,6 +1,7 @@
 import rclpy
 import sys, os
 import dccl
+import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from std_msgs.msg import UInt8MultiArray
@@ -97,9 +98,6 @@ class MvpC2Reporter(Node):
                                 msg.pose.orientation.y,
                                 msg.pose.orientation.z,
                                 msg.pose.orientation.w ])
-
-        self.publish_dccl(proto)
-
     #report controller callback
     def report_controller_callback(self):
         while not self.report_controller_client.wait_for_service(timeout_sec=1.0):
@@ -136,7 +134,6 @@ def main(args=None):
     rclpy.init(args=args)
 
     reporter_node = MvpC2Reporter()
-
     rclpy.spin(reporter_node)
 
     # Destroy the node explicitly
