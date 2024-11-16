@@ -48,9 +48,9 @@ class UDPInterface:
 
                     # print(f"Client: IP {self.server_ip} on port {self.server_port} is reachable.")
                     #send a ping
-                    self.srv_socket.send(b"Ping")
-                    self.srv_socket.settimeout(1)  # Wait for up to 5 seconds
-                    response, addr = self.srv_socket.recvfrom(1024)
+                    self.client_socket.send(b"Ping")
+                    self.client_socket.settimeout(1)  # Wait for up to 5 seconds
+                    response, addr = self.client_socket.recvfrom(1024)
                     print("Server is reachable:", addr)
                     self.connection_status = True
             except socket.timeout:
