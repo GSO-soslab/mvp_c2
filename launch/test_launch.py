@@ -36,11 +36,5 @@ def generate_launch_description():
             output='screen',
             prefix=['stdbuf -o L'],
             parameters=[udp_setting_file]
-                        # {'type': 'server'},
-                        # {'server_ip': '192.168.0.123'},
-                        # {'server_port': 2500},
-                        # {'client_ip': '192.168.0.100'},
-                        # {'client_port': 3000},
-                    # ]
         ),
     ])
