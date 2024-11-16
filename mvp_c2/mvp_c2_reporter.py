@@ -54,7 +54,7 @@ class MvpC2Reporter(Node):
 
     #odometry callback
     def odom_callback(self, msg):
-        print("got odometry")
+        print("got odometry", flush =True)
         self.dccl_obj.load('Odometry')
         proto = mvp_cmd_dccl_pb2.Odometry()
         # proto.time = msg.header.stamp.to_sec()
