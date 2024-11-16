@@ -35,7 +35,7 @@ class MvpC2Reporter(Node):
         self.report_controller_client = self.create_client(Trigger, 'controller/get_state')
 
         #DCCL
-        self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, 'reporter/dccl_msg', 10)
+        self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, 'reporter/dccl_msg_tx', 10)
         dccl.loadProtoFile(os.path.join( get_package_share_directory(package_name), 
                                          'proto', 
                                          'mvp_cmd_dccl.proto') )

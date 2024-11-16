@@ -23,7 +23,7 @@ class MvpC2Commander(Node):
         super().__init__('mvp_c2_commander')
         #susbcribe to different topics
         self.dccl_reporter_sub = self.create_subscription(UInt8MultiArray, 
-                                                        'reporter/dccl_msg', 
+                                                        'commander/dccl_msg_rx', 
                                                         self.dccl_reporter_callback, 10)
 
         #DCCL

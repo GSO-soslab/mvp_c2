@@ -13,6 +13,7 @@ setup(
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/proto', [package_name + '/proto/mvp_cmd_dccl.proto']),
+
         ('lib/' + package_name, [package_name + '/proto/mvp_cmd_dccl_pb2.py']),
         ('lib/' + package_name, [package_name + '/include/dccl_checksum.py']),
 
@@ -20,6 +21,8 @@ setup(
         ('lib/' + package_name, [package_name + '/include/udp_interface.py']),
 
         (os.path.join('share', package_name, 'launch'), glob('launch/*')),
+        (os.path.join('share', package_name, 'config'), glob('config/*')),
+
     ],
     install_requires=['setuptools', 'std_msgs','nav_msgs', 'dccl'],
     zip_safe=True,
@@ -33,7 +36,7 @@ setup(
         'console_scripts': [
             'mvp_c2_reporter = mvp_c2.mvp_c2_reporter:main',
             'mvp_c2_commander = mvp_c2.mvp_c2_commander:main',
-            'mvp_c2_comm = mvp_c2.mvp_c2_comm:main'
+            'mvp_c2_udp_comm = mvp_c2.mvp_c2_udp_comm:main'
         ],
     },
 )
