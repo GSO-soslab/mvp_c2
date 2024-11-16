@@ -8,12 +8,17 @@ setup(
     name=package_name,
     version='0.0.0',
     packages=find_packages(exclude=['test']),
+    # packages=find_packages('include'),
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/proto', [package_name + '/proto/mvp_cmd_dccl.proto']),
-        ('lib/' + package_name, [package_name + '/dccl_checksum.py']),
         ('lib/' + package_name, [package_name + '/proto/mvp_cmd_dccl_pb2.py']),
+        ('lib/' + package_name, [package_name + '/include/dccl_checksum.py']),
+
+        ('lib/' + package_name, [package_name + '/include/serial_interface.py']),
+        ('lib/' + package_name, [package_name + '/include/udp_interface.py']),
+
         (os.path.join('share', package_name, 'launch'), glob('launch/*')),
     ],
     install_requires=['setuptools', 'std_msgs','nav_msgs', 'dccl'],
@@ -26,9 +31,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            # 'my_node = mvp_c2.my_node:main'
             'mvp_c2_reporter = mvp_c2.mvp_c2_reporter:main',
-            'mvp_c2_commander = mvp_c2.mvp_c2_commander:main'
+            'mvp_c2_commander = mvp_c2.mvp_c2_commander:main',
+            'mvp_c2_comm = mvp_c2.mvp_c2_comm:main'
         ],
     },
 )

@@ -49,8 +49,6 @@ class MvpC2Reporter(Node):
         dccl_msg = UInt8MultiArray()
         dccl_msg.data = self.dccl_obj.encode(proto)
         dccl_msg.data = package_dccl(dccl_msg.data)
-        # print(dccl_msg.data, flush = True)
-        # print(len(dccl_msg.data), flush = True)
         self.ddcl_reporter_pub.publish(dccl_msg)
         return True
 
@@ -81,12 +79,6 @@ class MvpC2Reporter(Node):
                            msg.twist.twist.angular.z ]) 
         
         self.publish_dccl(proto)
-        # dccl_msg = UInt8MultiArray()
-        # dccl_msg.data = self.dccl_obj.encode(proto)
-        # dccl_msg.data = package_dccl(dccl_msg.data)
-        # print(dccl_msg.data, flush = True)
-        # print(len(dccl_msg.data), flush = True)
-        # self.ddcl_reporter_pub.publish(dccl_msg)
 
     #geopose callback
     def geopose_callback(self, msg):
