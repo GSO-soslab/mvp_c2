@@ -1,4 +1,4 @@
-/vehicle/vehicle_c2_udp_comm:
+/mvp2_test_robot/vehicle_c2_udp_comm:
   ros__parameters:
     type: client
     server_ip: 192.168.0.100

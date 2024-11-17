@@ -15,15 +15,19 @@ def generate_launch_description():
     return LaunchDescription([
         Node(
             package='mvp_c2',
-            namespace='vehicle',
+            namespace='mvp2_test_robot',
             executable='mvp_c2_dccl_ros',
             name='vehicle_c2',
             output='screen',
             # prefix=['stdbuf -o L']
+            remappings=[
+                ('local/odometry', 'odometry/filtered'),
+                ('local/geopose', 'odometry/geopose')
+            ]
         ),
         Node(
             package = 'mvp_c2',
-            namespace = 'vehicle',
+            namespace = 'mvp2_test_robot',
             executable='mvp_c2_udp_comm',
             name = 'vehicle_c2_udp_comm',
             output='screen',
