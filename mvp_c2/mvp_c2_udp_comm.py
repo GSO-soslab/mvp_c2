@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+import threading
 
 from udp_interface import UDPInterface
 from std_msgs.msg import UInt8MultiArray
@@ -18,7 +19,6 @@ class MvpC2UdpRos(Node):
 
         self.udp_obj = UDPInterface(self.udp_type, self.server_ip, self.server_port, 
                                     self.client_ip, self.client_port)
-        print("UDP connection good")
 
         ##subscribe to dccl tx topic
         self.dccl_tx_sub = self.create_subscription(UInt8MultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 10)
@@ -26,7 +26,17 @@ class MvpC2UdpRos(Node):
         ##publish to dccl rx topic
         self.ddcl_rx_pub = self.create_publisher(UInt8MultiArray, 'dccl_msg_rx', 10)
         
-        self.timer = self.create_timer(self.rx_timer, self.dccl_rx_callback)
+        # self.timer = self.create_timer(self.rx_timer, self.dccl_rx_callback)
+        self.timer_test = self.create_timer(2.0, self.udp_test)
+
+        self.running = True
+        threading.Thread(target=self.dccl_rx_callback, daemon=True).start()
+        print("UDP listener started.")
+
+    def udp_test(self):
+        data = f"I am {self.udp_type}"
+        self.udp_obj.send(data.encode('utf-8'))
+        
 
     def dccl_tx_callback(self, msg):
         print("got dccl", flush =True)
@@ -34,11 +44,17 @@ class MvpC2UdpRos(Node):
         self.udp_obj.send(msg.data)
 
     def dccl_rx_callback(self):
-        data = self.udp_obj.read()
-        if(data != False):
-            self.ddcl_rx_pub.publish(data)
+        while self.running:
+            try:
+                data = self.udp_obj.read()
+                if(data is not None):
+                    self.ddcl_rx_pub.publish(data)
+            except Exception as e:
+                print(f"Error in dccl_rx_callback: {e}")
+                break
 
     def close_udp(self):
+        self.running = False
         self.udp_obj.close()
 
 def main(args=None):
