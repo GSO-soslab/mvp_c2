@@ -260,7 +260,6 @@ class MvpC2Dccl(Node):
     
         if self.local_geopose_tx_flag is False:
             self.publish_dccl(proto)
-            print(proto, flush=True)
             self.local_geopose_tx_flag = True
 
     #joy callback
