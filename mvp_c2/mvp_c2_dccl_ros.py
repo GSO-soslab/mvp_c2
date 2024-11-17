@@ -31,6 +31,7 @@ class MvpC2Dccl(Node):
     
         self.local_id = self.declare_parameter('local_id', 1).value
         self.remote_id = self.declare_parameter('remote_id', 2).value
+        self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 1.0).value
         # self.destination_name = self.declare_parameter('destination_name', 'test_robot').value
 
         #susbcribe to different topics running on the source
@@ -47,7 +48,6 @@ class MvpC2Dccl(Node):
         self.remote_joy_pub = self.create_publisher(Joy, '~/remote/joy', 10)
 
         ##service for access remote controllers
-
 
         #client for local controllers
         self.remote_controller_client = self.create_client(Trigger, '~/controller/get_state')
@@ -67,6 +67,20 @@ class MvpC2Dccl(Node):
         
         self.dccl_obj = dccl.Codec()
         print("dccl_ros_node initialized", flush=True)
+
+        ##timer for resetting the dccl tx flag
+        self.local_odom_tx_flag = False
+        self.local_geopose_tx_flag = False
+        self.local_joy_tx_flag = False
+
+        self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
+
+
+    def reset_dccl_tx_flag(self):
+        self.local_odom_tx_flag = False
+        self.local_geopose_tx_flag = False
+        self.local_joy_tx_flag = False
+
 
     ###parsing dccl
     def dccl_rx_callback(self,msg):
@@ -192,7 +206,9 @@ class MvpC2Dccl(Node):
                            msg.twist.twist.angular.y, 
                            msg.twist.twist.angular.z ]) 
         
-        self.publish_dccl(proto)
+        if self.local_odom_tx_flag is False:
+            self.publish_dccl(proto)
+            self.local_odom_tx_flag = True
 
     #geopose callback
     def geopose_callback(self, msg):
@@ -211,8 +227,11 @@ class MvpC2Dccl(Node):
                                 msg.pose.orientation.y,
                                 msg.pose.orientation.z,
                                 msg.pose.orientation.w ])
-        self.publish_dccl(proto)
-    
+        
+        if self.local_geopose_tx_flag is False:
+            self.publish_dccl(proto)
+            self.local_geopose_tx_flag = True
+
     #joy callback
     def joy_callback(self, msg):
         print("got joy")
@@ -224,7 +243,9 @@ class MvpC2Dccl(Node):
         proto.remote_id = self.remote_id
         proto.axes.extend(msg.axes)  # Map axes
         proto.buttons.extend(msg.buttons)  # Map buttons
-        self.publish_dccl(proto)
+        if self.local_joy_tx_flag is False:
+            self.publish_dccl(proto)
+            self.local_joy_tx_flag = True
 
     # #report controller callback
     # def report_controller_callback(self):
