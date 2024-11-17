@@ -48,7 +48,7 @@ class MvpC2Dccl(Node):
 
         ##service for access remote controllers
         self.remote_set_controller_srv = self.create_service(SetBool, '~/remote/controller/set', self.remote_set_controller_callback)
-        self.remote_get_controller_srv = self.create_service(Trigger, '~/remote/controller/get_state', self.remote_get_controller_callback)
+        # self.remote_get_controller_srv = self.create_service(Trigger, '~/remote/controller/get_state', self.remote_get_controller_callback)
 
         #client for local controllers
         self.local_set_controller_client = self.create_client(Trigger, '~/controller/set')
@@ -179,7 +179,7 @@ class MvpC2Dccl(Node):
                 try: 
                     self.dccl_obj.load('SetController')
                     proto_msg = self.dccl_obj.decode(data)
-                    print(proto_msg)
+                    print(proto_msg, flush = True)
                     # while not self.local_set_controller_client.wait_for_service(timeout_sec=1.0):
                     #     self.get_logger().info('Waiting for service to become available...')
 
