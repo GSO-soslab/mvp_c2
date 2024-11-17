@@ -1,4 +1,4 @@
-/mvp_c2/mvp_c2_udp_comm:
+/topside/topside_c2:
   ros__parameters:
     type: server
     server_ip: 192.168.0.123

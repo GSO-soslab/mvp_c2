@@ -17,30 +17,23 @@ class MvpC2UdpRos(Node):
         self.client_port = self.declare_parameter('client_port', 3000).value
         self.rx_timer = self.declare_parameter('rx_timer', 0.1).value
 
+        print (self.client_port, flush = True)
         self.udp_obj = UDPInterface(self.udp_type, self.server_ip, self.server_port, 
                                     self.client_ip, self.client_port)
 
         ##subscribe to dccl tx topic
-        self.dccl_tx_sub = self.create_subscription(UInt8MultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 10)
+        self.dccl_tx_sub = self.create_subscription(UInt8MultiArray, '~/dccl_msg_tx', self.dccl_tx_callback, 10)
 
         ##publish to dccl rx topic
-        self.ddcl_rx_pub = self.create_publisher(UInt8MultiArray, 'dccl_msg_rx', 10)
+        self.ddcl_rx_pub = self.create_publisher(UInt8MultiArray, '~/dccl_msg_rx', 10)
         
-        # self.timer = self.create_timer(self.rx_timer, self.dccl_rx_callback)
-        self.timer_test = self.create_timer(2.0, self.udp_test)
-
         self.running = True
         threading.Thread(target=self.dccl_rx_callback, daemon=True).start()
         print("UDP listener started.")
 
-    def udp_test(self):
-        data = f"I am {self.udp_type}"
-        self.udp_obj.send(data.encode('utf-8'))
-        
-
     def dccl_tx_callback(self, msg):
-        print("got dccl", flush =True)
-        print(msg.data, flush = True)
+        # print("got dccl", flush =True)
+        # print(msg.data, flush = True)
         self.udp_obj.send(msg.data)
 
     def dccl_rx_callback(self):
@@ -48,7 +41,10 @@ class MvpC2UdpRos(Node):
             try:
                 data = self.udp_obj.read()
                 if(data is not None):
-                    self.ddcl_rx_pub.publish(data)
+                    msg = UInt8MultiArray()
+                    msg.data = data
+                    # print("publishing", flush = True)
+                    self.ddcl_rx_pub.publish(msg)
             except Exception as e:
                 print(f"Error in dccl_rx_callback: {e}")
                 break

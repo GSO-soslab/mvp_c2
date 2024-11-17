@@ -38,8 +38,8 @@ class UDPInterface:
             if self.type == 'server':
                 # self.server_socket.settimeout(1)  # Set timeout to  1 seconds
                 data, addr = self.server_socket.recvfrom(1024)  # Buffer size is 1024 bytes
-                print(addr, flush = True)
-                print(data, flush = True)
+                # print(addr, flush = True)
+                # print(data, flush = True)
                 if addr[0] == self.client_addr[0]:
                     return data
                 else:
@@ -48,8 +48,8 @@ class UDPInterface:
             elif self.type == 'client':
                 # self.client_socket.settimeout(1)  # Set timeout to  1 seconds
                 data, addr = self.client_socket.recvfrom(1024)  # Buffer size is 1024 bytes
-                print(addr, flush = True)
-                print(data, flush = True)
+                # print(addr, flush = True)
+                # print(data, flush = True)
                 if addr[0] == self.server_addr[0]:
                     return data
                 else:
