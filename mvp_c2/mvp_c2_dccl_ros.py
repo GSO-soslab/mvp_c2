@@ -32,33 +32,33 @@ class MvpC2Dccl(Node):
         self.local_id = self.declare_parameter('local_id', 1).value
         self.remote_id = self.declare_parameter('remote_id', 2).value
         self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 2.0).value
-        # self.destination_name = self.declare_parameter('destination_name', 'test_robot').value
+        self.machine_type = self.declare_parameter('machine_type', 'topside').value #robot
 
         #susbcribe to different topics running on the source
-        self.local_odom_sub = self.create_subscription(Odometry, '~/local/odometry', self.odom_callback, 10)
-
-        self.local_geopose_sub = self.create_subscription(GeoPoseStamped, '~/local/geopose', self.geopose_callback, 10)
-        
-        self.local_joy_sub = self.create_subscription(Joy, '~/local/joy', self.joy_callback, 10)
+        self.local_odom_sub = self.create_subscription(Odometry, 'local/odometry', self.odom_callback, 10)
+        self.local_geopose_sub = self.create_subscription(GeoPoseStamped, 'local/geopose', self.geopose_callback, 10)
+        self.local_joy_sub = self.create_subscription(Joy, 'local/joy', self.joy_callback, 10)
 
         ##publish information parsed from dccl to ros topic
-        self.remote_odom_pub = self.create_publisher(Odometry, '~/remote/odometry', 10)
-        self.remote_geopose_pub = self.create_publisher(GeoPoseStamped, '~/remote/geopose', 10)
-        self.remote_joy_pub = self.create_publisher(Joy, '~/remote/joy', 10)
+        self.remote_odom_pub = self.create_publisher(Odometry, 'remote/odometry', 10)
+        self.remote_geopose_pub = self.create_publisher(GeoPoseStamped, 'remote/geopose', 10)
+        self.remote_joy_pub = self.create_publisher(Joy, 'remote/joy', 10)
 
         ##service for access remote controllers
-        self.remote_set_controller_srv = self.create_service(SetBool, '~/remote/controller/set', self.remote_set_controller_callback)
+        self.remote_set_controller_srv = self.create_service(SetBool, 'remote/controller/set', self.remote_set_controller_callback)
         # self.remote_get_controller_srv = self.create_service(Trigger, '~/remote/controller/get_state', self.remote_get_controller_callback)
 
         #client for local controllers
-        self.local_set_controller_client = self.create_client(Trigger, '~/controller/set')
+        self.local_set_controller_client = self.create_client(Trigger, 'controller/set')
 
+        #local controller status will be checked using timer and ->dccl tx
+        # self.local_get_controller_client = 
 
         #DCCL byte array topic
-        self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, '~/dccl_msg_tx', 10)
+        self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, 'mvp_c2/dccl_msg_tx', 10)
 
         self.dccl_reporter_sub = self.create_subscription(UInt8MultiArray, 
-                                                        '~/dccl_msg_rx', 
+                                                        'mvp_c2/dccl_msg_rx', 
                                                         self.dccl_rx_callback, 10)
 
 
