@@ -183,14 +183,14 @@ class MvpC2Dccl(Node):
                     self.dccl_obj.load('SetController')
                     proto_msg = self.dccl_obj.decode(data)
                     print(proto_msg, flush = True)
-                    # while not self.local_set_controller_client.wait_for_service(timeout_sec=1.0):
-                    #     self.get_logger().info('Waiting for service to become available...')
+                    while not self.local_set_controller_client.wait_for_service(timeout_sec=1.0):
+                        self.get_logger().info('Waiting for service to become available...')
 
-                    # request = SetBool.Request()
-                    # request.data = proto_msg.status
+                    request = SetBool.Request()
+                    request.data = proto_msg.status
 
-                    # future = self.local_set_controller_client.call_async(request)
-                    # rclpy.spin_until_future_complete(self, future)
+                    future = self.local_set_controller_client.call_async(request)
+                    rclpy.spin_until_future_complete(self, future)
 
                 except Exception as e:
                     # Print the exception message for debugging
