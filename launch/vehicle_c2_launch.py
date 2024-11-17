@@ -25,12 +25,13 @@ def generate_launch_description():
             package = 'mvp_c2',
             namespace = 'vehicle',
             executable='mvp_c2_udp_comm',
-            name = 'vehicle_c2',
+            name = 'vehicle_c2_udp_comm',
             output='screen',
             prefix=['stdbuf -o L'],
             parameters=[udp_setting_file],
             remappings=[
-                # ('dccl_msg_tx', 'dccl_msg_tx')
+                ('dccl_msg_tx', 'vehicle_c2/dccl_msg_tx'),
+                ('dccl_msg_rx', 'vehicle_c2/dccl_msg_rx')
             ]
         ),
     ])

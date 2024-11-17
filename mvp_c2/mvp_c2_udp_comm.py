@@ -22,10 +22,10 @@ class MvpC2UdpRos(Node):
                                     self.client_ip, self.client_port)
 
         ##subscribe to dccl tx topic
-        self.dccl_tx_sub = self.create_subscription(UInt8MultiArray, '~/dccl_msg_tx', self.dccl_tx_callback, 10)
+        self.dccl_tx_sub = self.create_subscription(UInt8MultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 10)
 
         ##publish to dccl rx topic
-        self.ddcl_rx_pub = self.create_publisher(UInt8MultiArray, '~/dccl_msg_rx', 10)
+        self.ddcl_rx_pub = self.create_publisher(UInt8MultiArray, 'dccl_msg_rx', 10)
         
         self.running = True
         threading.Thread(target=self.dccl_rx_callback, daemon=True).start()

@@ -25,12 +25,12 @@ def generate_launch_description():
             package = 'mvp_c2',
             namespace = 'topside',
             executable='mvp_c2_udp_comm',
-            name = 'topside_c2',
+            name = 'topside_c2_udp_comm',
             output='screen',
             prefix=['stdbuf -o L'],
             parameters=[udp_setting_file],
             remappings=[
-                # ('dccl_msg_tx', 'dccl_msg_tx')
+                ('dccl_msg_tx', 'dccl_msg_tx')
             ]
         ),
     ])
