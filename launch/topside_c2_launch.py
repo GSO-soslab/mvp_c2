@@ -30,7 +30,8 @@ def generate_launch_description():
             prefix=['stdbuf -o L'],
             parameters=[udp_setting_file],
             remappings=[
-                ('dccl_msg_tx', 'dccl_msg_tx')
+                ('dccl_msg_tx', 'topside_c2/dccl_msg_tx'),
+                ('dccl_msg_rx', 'topside_c2/dccl_msg_rx'),
             ]
         ),
     ])
