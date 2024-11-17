@@ -31,7 +31,7 @@ class MvpC2Dccl(Node):
     
         self.local_id = self.declare_parameter('local_id', 1).value
         self.remote_id = self.declare_parameter('remote_id', 2).value
-        self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 1.0).value
+        self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 2.0).value
         # self.destination_name = self.declare_parameter('destination_name', 'test_robot').value
 
         #susbcribe to different topics running on the source
@@ -40,7 +40,6 @@ class MvpC2Dccl(Node):
         self.local_geopose_sub = self.create_subscription(GeoPoseStamped, '~/local/geopose', self.geopose_callback, 10)
         
         self.local_joy_sub = self.create_subscription(Joy, '~/local/joy', self.joy_callback, 10)
-
 
         ##publish information parsed from dccl to ros topic
         self.remote_odom_pub = self.create_publisher(Odometry, '~/remote/odometry', 10)
