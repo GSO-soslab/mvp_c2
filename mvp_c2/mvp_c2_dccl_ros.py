@@ -204,7 +204,7 @@ class MvpC2Dccl(Node):
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
         proto.lla.extend([ msg.pose.position.latitude, 
-                            msg.pose.position.lonhitude,
+                            msg.pose.position.longitude,
                             msg.pose.position.altitude ])
         
         proto.orientation.extend([ msg.pose.orientation.x, 
