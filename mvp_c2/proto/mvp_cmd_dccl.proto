@@ -30,7 +30,7 @@ message PWM{
 message Odometry{
     option (dccl.msg) = { codec_version: 4
         id: 3
-        max_bytes: 32 };
+        max_bytes: 64 };
     required double time = 1 [ (dccl.field) = {min: 1000000000 max: 2000000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
@@ -38,18 +38,20 @@ message Odometry{
     repeated double orientation = 5 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 2 max_repeat: 4 } ];
     repeated double uvw = 6 [ (dccl.field) = {min: -10.0 max: 10.0 precision: 2 max_repeat: 3 } ];
     repeated double pqr = 7 [ (dccl.field) = {min: -10.0 max: 10.0 precision: 2 max_repeat: 3 } ];
-
+    optional string frame_id = 8 [ (dccl.field) = {max_length: 15 } ];
+    optional string child_frame_id = 9 [ (dccl.field) = {max_length: 15 } ];
 }
 
 message GeoPose{
     option (dccl.msg) = { codec_version: 4
         id: 4
-        max_bytes: 32 };
+        max_bytes: 64 };
     required double time = 1 [ (dccl.field) = {min: 1000000000 max: 2000000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
     repeated double lla = 4 [ (dccl.field) = {min: -10000.0 max: 10000.0 precision: 2 max_repeat: 3 } ];
     repeated double orientation = 5 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 2 max_repeat: 4 } ];
+    optional string frame_id = 8 [ (dccl.field) = {max_length: 15 } ];
 }
 
 

@@ -121,6 +121,8 @@ class MvpC2Dccl(Node):
                     nanosec = int((proto_msg.time - sec) * 1e9)  
                     msg.header.stamp.sec = sec
                     msg.header.stamp.nanosec = nanosec
+                    msg.header.frame_id = proto_msg.frame_id
+                    msg.child_frame_id = proto_msg.child_frame_id
                     #map position
                     if len(proto_msg.position) ==3:
                         msg.pose.pose.position.x = proto_msg.position[0]
@@ -159,6 +161,7 @@ class MvpC2Dccl(Node):
                     nanosec = int((proto_msg.time - sec) * 1e9)  
                     msg.header.stamp.sec = sec
                     msg.header.stamp.nanosec = nanosec
+                    msg.header.frame_id = proto_msg.frame_id
                     if len(proto_msg.lla) ==3:
                         msg.pose.position.latitude = proto_msg.lla[0]
                         msg.pose.position.longitude = proto_msg.lla[1]
@@ -228,6 +231,9 @@ class MvpC2Dccl(Node):
                            msg.twist.twist.angular.y, 
                            msg.twist.twist.angular.z ]) 
         
+        proto.frame_id = msg.header.frame_id
+        proto.child_frame_id = msg.child_frame_id
+        
         if self.local_odom_tx_flag is False:
             self.publish_dccl(proto)
             self.local_odom_tx_flag = True
@@ -250,8 +256,11 @@ class MvpC2Dccl(Node):
                                 msg.pose.orientation.z,
                                 msg.pose.orientation.w ])
         
+        proto.frame_id = msg.header.frame_id
+    
         if self.local_geopose_tx_flag is False:
             self.publish_dccl(proto)
+            print(proto, flush=True)
             self.local_geopose_tx_flag = True
 
     #joy callback
