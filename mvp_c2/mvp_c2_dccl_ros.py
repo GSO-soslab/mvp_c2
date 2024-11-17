@@ -28,7 +28,9 @@ class MvpC2Dccl(Node):
 
     def __init__(self):
         super().__init__('mvp_c2_dccl')
-    
+
+        # ns = self.get_namespace()
+
         self.local_id = self.declare_parameter('local_id', 1).value
         self.remote_id = self.declare_parameter('remote_id', 2).value
         self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 2.0).value
@@ -49,7 +51,8 @@ class MvpC2Dccl(Node):
         # self.remote_get_controller_srv = self.create_service(Trigger, '~/remote/controller/get_state', self.remote_get_controller_callback)
 
         #client for local controllers
-        self.local_set_controller_client = self.create_client(Trigger, 'controller/set')
+        self.local_set_controller_client = self.create_client(SetBool, 'controller/set')
+
 
         #local controller status will be checked using timer and ->dccl tx
         # self.local_get_controller_client = 
@@ -182,9 +185,11 @@ class MvpC2Dccl(Node):
                 try: 
                     self.dccl_obj.load('SetController')
                     proto_msg = self.dccl_obj.decode(data)
-                    print(proto_msg, flush = True)
+                    # print(proto_msg, flush = True)
                     while not self.local_set_controller_client.wait_for_service(timeout_sec=1.0):
-                        self.get_logger().info('Waiting for service to become available...')
+                       self.get_logger().info(
+                            f"Waiting for service '{self.local_set_controller_client.srv_name}' to become available..."
+                        )
 
                     request = SetBool.Request()
                     request.data = proto_msg.status
