@@ -7,7 +7,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import UInt8MultiArray
 from sensor_msgs.msg import Joy
 
-from std_srvs.srv import Trigger
+from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
 # from mvp_msgs.srv import GetControlMode
 
@@ -47,9 +47,11 @@ class MvpC2Dccl(Node):
         self.remote_joy_pub = self.create_publisher(Joy, '~/remote/joy', 10)
 
         ##service for access remote controllers
+        self.remote_set_controller_srv = self.create_service(SetBool, '~/remote/controller/set', self.remote_set_controller_callback)
+        self.remote_get_controller_srv = self.create_service(Trigger, '~/remote/controller/get_state', self.remote_get_controller_callback)
 
         #client for local controllers
-        self.remote_controller_client = self.create_client(Trigger, '~/controller/get_state')
+        self.local_set_controller_client = self.create_client(Trigger, '~/controller/set')
 
 
         #DCCL byte array topic
@@ -79,6 +81,7 @@ class MvpC2Dccl(Node):
         self.local_odom_tx_flag = False
         self.local_geopose_tx_flag = False
         self.local_joy_tx_flag = False
+        self.remote_set_controller_tx_flag = False
 
 
     ###parsing dccl
@@ -170,7 +173,27 @@ class MvpC2Dccl(Node):
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
-                
+            
+            #set controller
+            if message_id ==22:
+                try: 
+                    self.dccl_obj.load('SetController')
+                    proto_msg = self.dccl_obj.decode(data)
+                    print(proto_msg)
+                    # while not self.local_set_controller_client.wait_for_service(timeout_sec=1.0):
+                    #     self.get_logger().info('Waiting for service to become available...')
+
+                    # request = SetBool.Request()
+                    # request.data = proto_msg.status
+
+                    # future = self.local_set_controller_client.call_async(request)
+                    # rclpy.spin_until_future_complete(self, future)
+
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
+
     ##publish dccl 
     def publish_dccl(self, proto):
         dccl_msg = UInt8MultiArray()
@@ -181,7 +204,7 @@ class MvpC2Dccl(Node):
 
     #odometry callback
     def odom_callback(self, msg):
-        print("got odometry", flush =True)
+        # print("got odometry", flush =True)
         self.dccl_obj.load('Odometry')
         proto = mvp_cmd_dccl_pb2.Odometry()
         # proto.time = msg.header.stamp.to_sec()
@@ -211,7 +234,7 @@ class MvpC2Dccl(Node):
 
     #geopose callback
     def geopose_callback(self, msg):
-        print("got geopose")
+        # print("got geopose")
         self.dccl_obj.load('GeoPose')
         proto = mvp_cmd_dccl_pb2.GeoPose()
         # proto.time = msg.header.stamp.to_sec()
@@ -233,7 +256,7 @@ class MvpC2Dccl(Node):
 
     #joy callback
     def joy_callback(self, msg):
-        print("got joy")
+        # print("got joy")
         self.dccl_obj.load('Joy')
         proto = mvp_cmd_dccl_pb2.Joy()
         # proto.time = msg.header.stamp.to_sec()
@@ -246,17 +269,24 @@ class MvpC2Dccl(Node):
             self.publish_dccl(proto)
             self.local_joy_tx_flag = True
 
-    # #report controller callback
-    # def report_controller_callback(self):
-    #     while not self.report_controller_client.wait_for_service(timeout_sec=1.0):
-    #         self.get_logger().info('Waiting for service to become available...')
+    #set remote controller service callback
+    def remote_set_controller_callback(self, request, response):
+        # print("got set controller")
+        self.dccl_obj.load('SetController')
+        proto = mvp_cmd_dccl_pb2.SetController()
+        # proto.time = msg.header.stamp.to_sec()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.status = request.data
+        response.success = True
+        response.message = 'Service called'
+        if self.remote_set_controller_tx_flag is False:
+            self.publish_dccl(proto)
+            self.remote_set_controller_tx_flag = True
+        return response        
         
-    #     request = Trigger.Request()
-    #     future = self.report_controller_client.call_async(request)
-        
-    #     rclpy.spin_until_future_complete(self, future)
-        
-    #     if future.result() is not None:
+        # if future.result() is not None:
     #         # self.get_logger().info(f'Response: {future.result().success}, Message: {future.result().message}')
     #         print("got controller state")
     #         self.dccl_obj.load('ReportController')
