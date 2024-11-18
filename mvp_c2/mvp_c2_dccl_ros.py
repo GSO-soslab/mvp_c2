@@ -217,7 +217,7 @@ class MvpC2Dccl(Node):
                     request.data = proto_msg.status
 
                     future = self.local_set_controller_client.call_async(request)
-                    rclpy.spin_until_future_complete(self, future)
+                    # rclpy.spin_until_future_complete(self, future)
 
                 except Exception as e:
                     # Print the exception message for debugging
@@ -238,11 +238,11 @@ class MvpC2Dccl(Node):
 
             ##change helm state
             if message_id == 30:
-                print("got change helm ", flush = True)
+                # print("got change helm ", flush = True)
                 try:
                     self.dccl_obj.load('SetHelm')
                     proto_msg = self.dccl_obj.decode(data)
-                    print(proto_msg, flush = True)
+                    # print(proto_msg, flush = True)
                     while not self.local_set_helm_client.wait_for_service(timeout_sec=1.0):
                        self.get_logger().info(
                             f"Waiting for service '{self.local_set_helm_client.srv_name}' to become available..."
@@ -250,10 +250,10 @@ class MvpC2Dccl(Node):
 
                     request = ChangeState.Request()
                     request.state = self.default_state_list[proto_msg.state]
-                    print(request.state, flush = True)
+                    # print(request.state, flush = True)
                     request.caller = "dccl"
                     future = self.local_set_helm_client.call_async(request)
-                    rclpy.spin_until_future_complete(self, future)
+                    # rclpy.spin_until_future_complete(self, future)
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
@@ -307,7 +307,7 @@ class MvpC2Dccl(Node):
         proto.pqr.extend([ msg.twist.twist.angular.x,
                            msg.twist.twist.angular.y, 
                            msg.twist.twist.angular.z ]) 
-        
+        print
         proto.frame_id = msg.header.frame_id
         proto.child_frame_id = msg.child_frame_id
         
