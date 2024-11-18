@@ -238,6 +238,7 @@ class MvpC2Dccl(Node):
 
             ##change helm state
             if message_id == 30:
+                print("got change helm ", flush = True)
                 try:
                     self.dccl_obj.load('SetHelm')
                     proto_msg = self.dccl_obj.decode(data)
@@ -249,6 +250,7 @@ class MvpC2Dccl(Node):
 
                     request = ChangeState.Request()
                     request.state = self.default_state_list[proto_msg.state]
+                    print(request.state, flush = True)
                     request.caller = "dccl"
                     future = self.local_set_helm_client.call_async(request)
                     rclpy.spin_until_future_complete(self, future)
@@ -419,7 +421,7 @@ class MvpC2Dccl(Node):
         # print(proto, flush = True)
         if self.local_report_helm_state_tx_flag is False:
             self.publish_dccl(proto)
-            print(proto, flush = True)
+            # print(proto, flush = True)
             self.local_report_helm_state_tx_flag = True
         return response   
 
@@ -449,7 +451,7 @@ class MvpC2Dccl(Node):
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
         if request.data in self.default_state_list:
-            index = self.default_state_list.index(response.state.name)
+            index = self.default_state_list.index(request.data)
         else:
             print(f"'{request.data}' not found in default_state_list")
             index = 0
