@@ -7,7 +7,8 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import UInt8MultiArray, Bool
 from sensor_msgs.msg import Joy
 from mvp_msgs.srv import SetString
-from mvp_msgs.srv import ChangeState
+from mvp_msgs.srv import ChangeState, GetState
+from mvp_msgs.msg import HelmState
 
 from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
@@ -49,6 +50,7 @@ class MvpC2Dccl(Node):
             self.local_set_controller_client = self.create_client(SetBool, 'controller/set')
             self.local_report_controller_client = self.create_client(Trigger, 'controller/get_state')
             self.local_set_helm_client = self.create_client(ChangeState, 'mvp_helm/change_state')
+            self.local_report_helm_client = self.create_client(GetState, 'mvp_helm/get_state')
             #subscriber
             self.local_joy_sub = self.create_subscription(Joy, 'local/joy', self.joy_callback, 10)
 
@@ -56,7 +58,7 @@ class MvpC2Dccl(Node):
         self.remote_odom_pub = self.create_publisher(Odometry, 'remote/odometry', 10)
         self.remote_geopose_pub = self.create_publisher(GeoPoseStamped, 'remote/geopose', 10)
         self.remote_controller_state_pub = self.create_publisher(Bool, 'remote/controller_state', 10)
-
+        self.remote_helm_state_pub = self.create_publisher(HelmState, 'remote/helm/state', 10``)
         self.remote_joy_pub = self.create_publisher(Joy, 'remote/joy', 10)
 
         ##service for access remote controllers
@@ -83,6 +85,7 @@ class MvpC2Dccl(Node):
         self.local_geopose_tx_flag = False
         self.local_joy_tx_flag = False
         self.local_report_controller_state_tx_flag = False
+        self.local_report_helm_state_tx_flag = False
 
         self.remote_set_controller_tx_flag = False
         self.remote_set_helm_state_tx_flag = False
@@ -90,8 +93,8 @@ class MvpC2Dccl(Node):
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
 
         if self.local_mvp_active:
-            self.timer2= self.create_timer(self.dccl_tx_interval, self.report_controller_state_callback)
-
+            self.timer2 = self.create_timer(self.dccl_tx_interval, self.report_controller_state_callback)
+            self.timer3 = self.create_timer(self.dccl_tx_interval, self.report_helm_state_callback)
 
     def reset_dccl_tx_flag(self):
         self.local_odom_tx_flag = False
@@ -100,7 +103,11 @@ class MvpC2Dccl(Node):
         self.remote_set_controller_tx_flag = False
         self.local_report_controller_state_tx_flag = False
         self.remote_set_helm_state_tx_flag = False
+        self.local_report_helm_state_tx_flag = False
 
+    #######################################################
+    ############DCCL parsing###############################
+    #######################################################
     ###parsing dccl
     def dccl_rx_callback(self,msg):
         # print("got dccl", flush=True)
@@ -248,6 +255,19 @@ class MvpC2Dccl(Node):
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
 
+            ##report helm
+            if message_id == 31:
+                try:
+                    self.dccl_obj.load('ReportHelm')
+                    proto_msg = self.dccl_obj.decode(data)
+                    msg = HelmState()
+                    msg.name = proto_msg.state
+                    msg.transitions = proto_msg.transitions.split(", ")
+                    self.remote_helm_state_pub(msg)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
     ##publish dccl 
     def publish_dccl(self, proto):
         dccl_msg = UInt8MultiArray()
@@ -255,7 +275,10 @@ class MvpC2Dccl(Node):
         dccl_msg.data = package_dccl(dccl_msg.data)
         self.ddcl_reporter_pub.publish(dccl_msg)
         return True
-
+    
+    #######################################################
+    ############Callback###################################
+    #######################################################
     #odometry callback
     def odom_callback(self, msg):
         # print("got odometry", flush =True)
@@ -356,6 +379,38 @@ class MvpC2Dccl(Node):
             self.publish_dccl(proto)
             self.local_report_controller_state_tx_flag = True
         return response      
+
+
+    def report_helm_state_callback(self):
+        # Block until the service is available (1-second timeout)
+        while not self.local_report_helm_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info(f"Waiting for service '{self.local_report_helm_client.srv_name}' to become available...")
+
+        request = GetState.Request()
+        request.name = ''
+        future = self.local_report_helm_client.call_async(request)
+
+        # Handle the response
+        future.add_done_callback(self.report_helm_state_callback_done)
+
+    def report_helm_state_callback_done(self, future):
+        response = future.result()
+        # self.get_logger().info(f'Service response: {response}')
+        ##make dccl
+        self.dccl_obj.load('ReportHelm')
+        proto = mvp_cmd_dccl_pb2.ReportHelm()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.state = response.state.name
+        proto.connected_state = ", ".join(response.state.transitions)
+
+        # print(proto, flush = True)
+        if self.local_report_helm_state_tx_flag is False:
+            self.publish_dccl(proto)
+            print(proto, flush = True)
+            self.local_report_helm_state_tx_flag = True
+        return response   
 
     #set remote controller service callback
     def remote_set_controller_callback(self, request, response):

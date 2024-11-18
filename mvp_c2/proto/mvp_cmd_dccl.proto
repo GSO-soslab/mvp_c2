@@ -119,6 +119,7 @@ message ReportHelm{
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
     required string state = 4 [ (dccl.field) = {max_length: 40} ];
+    required string connected_state = 5 [ (dccl.field) = {max_length: 40} ];
 }
 
 //update waypoint in path3d
