@@ -6,6 +6,7 @@ from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from std_msgs.msg import UInt8MultiArray, Bool
 from sensor_msgs.msg import Joy
+from mvp_msgs.srv import SetString, ChangeState
 
 from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
@@ -46,6 +47,8 @@ class MvpC2Dccl(Node):
             #client for local controllers
             self.local_set_controller_client = self.create_client(SetBool, 'controller/set')
             self.local_report_controller_client = self.create_client(Trigger, 'controller/get_state')
+            self.local_set_helm_client = self.create_client(ChangeState, 'mvp_helm/change_state')
+            #subscriber
             self.local_joy_sub = self.create_subscription(Joy, 'local/joy', self.joy_callback, 10)
 
         ##publish information parsed from dccl to ros topic
@@ -57,6 +60,7 @@ class MvpC2Dccl(Node):
 
         ##service for access remote controllers
         self.remote_set_controller_srv = self.create_service(SetBool, 'remote/controller/set', self.remote_set_controller_callback)
+        self.remote_set_state_srv = self.create_service(SetString, 'remote/mvp_helm/change_state', self.remote_set_helm_state_callback)
 
         #DCCL byte array topic
         self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, 'mvp_c2/dccl_msg_tx', 10)
@@ -80,6 +84,7 @@ class MvpC2Dccl(Node):
         self.local_report_controller_state_tx_flag = False
 
         self.remote_set_controller_tx_flag = False
+        self.remote_set_helm_state_tx_flag = False
 
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
 
@@ -93,7 +98,7 @@ class MvpC2Dccl(Node):
         self.local_joy_tx_flag = False
         self.remote_set_controller_tx_flag = False
         self.local_report_controller_state_tx_flag = False
-
+        self.remote_set_helm_state_tx_flag = False
 
     ###parsing dccl
     def dccl_rx_callback(self,msg):
@@ -222,6 +227,24 @@ class MvpC2Dccl(Node):
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
 
+            ##change helm state
+            if message_id == 30:
+                try:
+                    self.dccl_obj.load('SetHelm')
+                    proto_msg = self.dccl_obj.decode(data)
+                    while not self.local_set_helm_client.wait_for_service(timeout_sec=1.0):
+                       self.get_logger().info(
+                            f"Waiting for service '{self.local_set_helm_client.srv_name}' to become available..."
+                        )
+
+                    request = ChangeState.Request()
+                    request.data = proto_msg.state
+                    request.caller = "dccl"
+                    future = self.local_set_helm_client.call_async(request)
+                    rclpy.spin_until_future_complete(self, future)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
 
     ##publish dccl 
     def publish_dccl(self, proto):
@@ -349,6 +372,21 @@ class MvpC2Dccl(Node):
             self.remote_set_controller_tx_flag = True
         return response        
     
+    ##set remote helm state
+    def remote_set_helm_state_callback(self, request, response):
+        self.dccl_obj.load('SetHelm')
+        proto = mvp_cmd_dccl_pb2.SetController()
+        # proto.time = msg.header.stamp.to_sec()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.state = request.data
+        response.success = True
+        response.message = 'Service called'
+        if self.remote_set_helm_state_tx_flag is False:
+            self.publish_dccl(proto)
+            self.remote_set_helm_state_tx_flag = True
+        return response        
 
 def main(args=None):
     rclpy.init(args=args)

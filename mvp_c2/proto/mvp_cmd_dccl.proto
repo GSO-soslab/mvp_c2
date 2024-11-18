@@ -114,11 +114,11 @@ message SetHelm{
 message ReportHelm{
     option (dccl.msg) = { codec_version: 4
                           id: 31
-                          max_bytes: 32 };
+                          max_bytes: 100 };
     required double time = 1 [ (dccl.field) = {min: 1000000000 max: 2000000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
-    required string state = 4 [ (dccl.field) = {max_length: 9 } ];
+    required string state = 4 [ (dccl.field) = {max_length: 40} ];
 }
 
 //update waypoint in path3d
