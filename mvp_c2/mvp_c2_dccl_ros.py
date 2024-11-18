@@ -408,7 +408,7 @@ class MvpC2Dccl(Node):
         # print(proto, flush = True)
         if self.local_report_helm_state_tx_flag is False:
             self.publish_dccl(proto)
-            print(proto, flush = True)
+            # print(proto, flush = True)
             self.local_report_helm_state_tx_flag = True
         return response   
 
