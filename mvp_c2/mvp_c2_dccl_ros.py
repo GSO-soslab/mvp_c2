@@ -6,7 +6,8 @@ from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from std_msgs.msg import UInt8MultiArray, Bool
 from sensor_msgs.msg import Joy
-from mvp_msgs.srv import SetString, ChangeState
+from mvp_msgs.srv import SetString
+from mvp_msgs.srv import ChangeState
 
 from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
@@ -232,13 +233,14 @@ class MvpC2Dccl(Node):
                 try:
                     self.dccl_obj.load('SetHelm')
                     proto_msg = self.dccl_obj.decode(data)
+                    print(proto_msg, flush = True)
                     while not self.local_set_helm_client.wait_for_service(timeout_sec=1.0):
                        self.get_logger().info(
                             f"Waiting for service '{self.local_set_helm_client.srv_name}' to become available..."
                         )
 
                     request = ChangeState.Request()
-                    request.data = proto_msg.state
+                    request.state = proto_msg.state
                     request.caller = "dccl"
                     future = self.local_set_helm_client.call_async(request)
                     rclpy.spin_until_future_complete(self, future)
@@ -340,7 +342,7 @@ class MvpC2Dccl(Node):
 
     def report_controller_state_callback_done(self, future):
         response = future.result()
-        self.get_logger().info(f'Service response: {response.message}')
+        # self.get_logger().info(f'Service response: {response.message}')
         ##make dccl
         self.dccl_obj.load('ReportController')
         proto = mvp_cmd_dccl_pb2.ReportController()
@@ -375,7 +377,7 @@ class MvpC2Dccl(Node):
     ##set remote helm state
     def remote_set_helm_state_callback(self, request, response):
         self.dccl_obj.load('SetHelm')
-        proto = mvp_cmd_dccl_pb2.SetController()
+        proto = mvp_cmd_dccl_pb2.SetHelm()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
