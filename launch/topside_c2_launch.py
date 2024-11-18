@@ -20,6 +20,9 @@ def generate_launch_description():
             name='topside_c2',
             output='screen',
             # prefix=['stdbuf -o L']
+            parameters=[
+                {'local_mvp_active': False},
+                ],
         ),
         Node(
             package = 'mvp_c2',
