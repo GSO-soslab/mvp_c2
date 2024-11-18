@@ -5,3 +5,5 @@
     server_port: 5000
     client_ip: 192.168.0.123
     client_port: 6000
+
+    local_mvp_active: false
