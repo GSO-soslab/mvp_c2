@@ -111,7 +111,7 @@ class MvpC2Dccl(Node):
     #######################################################
     ###parsing dccl
     def dccl_rx_callback(self,msg):
-        # print("got dccl", flush=True)
+        print("got dccl", flush=True)
         flag, data = check_dccl(msg.data)
         if flag == True:
             message_id = self.dccl_obj.id(data)
