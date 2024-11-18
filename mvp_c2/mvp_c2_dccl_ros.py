@@ -39,7 +39,8 @@ class MvpC2Dccl(Node):
         self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 2.0).value
         self.machine_type = self.declare_parameter('machine_type', 'topside').value #robot
         self.local_mvp_active = self.declare_parameter('local_mvp_active', True).value
-
+        
+        self.default_state_list = ['start', 'kill', 'survey', 'profiling', 'teleop']
         # mvp_active meaning the local machine has mvp running so it can transfer its mvp related 
         # data to the remote machine
         #susbcribe to different topics running on the source
@@ -261,8 +262,8 @@ class MvpC2Dccl(Node):
                     self.dccl_obj.load('ReportHelm')
                     proto_msg = self.dccl_obj.decode(data)
                     msg = HelmState()
-                    msg.name = proto_msg.state
-                    msg.transitions = proto_msg.connected_state.split(", ")
+                    msg.name = self.default_state_list[proto_msg.state]
+                    msg.transitions = [self.default_state_list[i] for i in proto_msg.connected_state]
                     self.remote_helm_state_pub.publish(msg)
                 except Exception as e:
                     # Print the exception message for debugging
@@ -402,13 +403,23 @@ class MvpC2Dccl(Node):
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
-        proto.state = response.state.name
-        proto.connected_state = ", ".join(response.state.transitions)
+        # proto.state = response.state.name
+        
+        if response.state.name in self.default_state_list:
+            index = self.default_state_list.index(response.state.name)
+        else:
+            print(f"'{response.state_name}' not found in default_state_list")
+            index = 0
+        proto.state = index
+        
+        indices = [self.default_state_list.index(transition) 
+           for transition in response.state.transitions if transition in self.default_state_list]
+        proto.connected_state.extend(indices) 
 
         # print(proto, flush = True)
         if self.local_report_helm_state_tx_flag is False:
             self.publish_dccl(proto)
-            # print(proto, flush = True)
+            print(proto, flush = True)
             self.local_report_helm_state_tx_flag = True
         return response   
 

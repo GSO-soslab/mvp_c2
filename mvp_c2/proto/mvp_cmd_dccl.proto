@@ -2,9 +2,6 @@ syntax = "proto2";
 
 import "dccl/option_extensions.proto";
 
-    
-
-
 message Joy{
     option (dccl.msg) = { codec_version: 4
                           id: 1
@@ -107,7 +104,8 @@ message SetHelm{
     required double time = 1 [ (dccl.field) = {min: 1000000000 max: 2000000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
-    required string state = 4 [ (dccl.field) = {max_length: 9 } ];
+    // required string state = 4 [ (dccl.field) = {max_length: 9 } ];
+    required int32 state = 4 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
 }
 
 //report current helm state
@@ -118,8 +116,11 @@ message ReportHelm{
     required double time = 1 [ (dccl.field) = {min: 1000000000 max: 2000000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
-    required string state = 4 [ (dccl.field) = {max_length: 40} ];
-    required string connected_state = 5 [ (dccl.field) = {max_length: 40} ];
+    // required string state = 4 [ (dccl.field) = {max_length: 40} ];
+    // required string connected_state = 5 [ (dccl.field) = {max_length: 40} ];
+    required int32 state = 4 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
+    repeated int32 connected_state = 5 [ (dccl.field) = {min: 0 max: 100 precision: 0 max_repeat: 10} ];
+
 }
 
 //update waypoint in path3d
