@@ -248,7 +248,7 @@ class MvpC2Dccl(Node):
                         )
 
                     request = ChangeState.Request()
-                    request.state = proto_msg.state
+                    request.state = self.default_state_list[proto_msg.state]
                     request.caller = "dccl"
                     future = self.local_set_helm_client.call_async(request)
                     rclpy.spin_until_future_complete(self, future)
@@ -448,7 +448,13 @@ class MvpC2Dccl(Node):
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
-        proto.state = request.data
+        if request.data in self.default_state_list:
+            index = self.default_state_list.index(response.state.name)
+        else:
+            print(f"'{request.data}' not found in default_state_list")
+            index = 0
+        proto.state = index
+        # proto.state = request.data
         response.success = True
         response.message = 'Service called'
         if self.remote_set_helm_state_tx_flag is False:
