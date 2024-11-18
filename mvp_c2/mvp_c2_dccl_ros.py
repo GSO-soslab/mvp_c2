@@ -263,7 +263,7 @@ class MvpC2Dccl(Node):
                     msg = HelmState()
                     msg.name = proto_msg.state
                     msg.transitions = proto_msg.connected_state.split(", ")
-                    self.remote_helm_state_pub(msg)
+                    self.remote_helm_state_pub.publish(msg)
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
