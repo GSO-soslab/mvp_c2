@@ -58,7 +58,7 @@ class MvpC2Dccl(Node):
         self.remote_odom_pub = self.create_publisher(Odometry, 'remote/odometry', 10)
         self.remote_geopose_pub = self.create_publisher(GeoPoseStamped, 'remote/geopose', 10)
         self.remote_controller_state_pub = self.create_publisher(Bool, 'remote/controller_state', 10)
-        self.remote_helm_state_pub = self.create_publisher(HelmState, 'remote/helm/state', 10``)
+        self.remote_helm_state_pub = self.create_publisher(HelmState, 'remote/helm/state', 10)
         self.remote_joy_pub = self.create_publisher(Joy, 'remote/joy', 10)
 
         ##service for access remote controllers
@@ -262,7 +262,7 @@ class MvpC2Dccl(Node):
                     proto_msg = self.dccl_obj.decode(data)
                     msg = HelmState()
                     msg.name = proto_msg.state
-                    msg.transitions = proto_msg.transitions.split(", ")
+                    msg.transitions = proto_msg.connected_state.split(", ")
                     self.remote_helm_state_pub(msg)
                 except Exception as e:
                     # Print the exception message for debugging
