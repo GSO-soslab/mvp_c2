@@ -39,6 +39,9 @@ class MvpC2Commander(Node):
         self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 1.0).value
         
         self.default_state_list = ['start', 'kill', 'survey', 'profiling', 'teleop']
+        self.launch_packages = ['mvp2_test_robot_bringup']
+        self.launch_file_names = ['bringup_simulation']
+
         # mvp_active meaning the local machine has mvp running so it can transfer its mvp related 
         ##publish information parsed from dccl to ros topic
         topic_prefix = 'remote/id_' + str(self.remote_id)
@@ -52,6 +55,19 @@ class MvpC2Commander(Node):
         ##service for access remote controllers
         self.remote_set_controller_srv = self.create_service(SetBool, topic_prefix + '/controller/set', self.remote_set_controller_callback)
         self.remote_set_state_srv = self.create_service(SetString, topic_prefix + '/mvp_helm/change_state', self.remote_set_helm_state_callback)
+
+        ##service for roslaunch files
+        if len(self.launch_packages) == len(self.launch_file_names):
+            for index in range(len(self.launch_packages)):
+                srv_name = topic_prefix + '/roslaunch/' + self.launch_packages[index] + '/' + self.launch_file_names[index]
+                self.remote_set_state_srv = self.create_service(
+                    SetBool,
+                    srv_name,
+                    lambda req, resp, idx=index: self.roslaunch_srv_callback(req, resp, idx)
+                )
+
+        else:
+            print("Launch packages and name entries doesn't match", flush = True)
 
         #DCCL byte array topic
         self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, 'mvp_c2/dccl_msg_tx', 10)
@@ -73,6 +89,7 @@ class MvpC2Commander(Node):
 
         self.remote_set_controller_tx_flag = False
         self.remote_set_helm_state_tx_flag = False
+        self.remote_set_ros_launch_tx_flag = False
 
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
 
@@ -80,6 +97,7 @@ class MvpC2Commander(Node):
         self.local_joy_tx_flag = False
         self.remote_set_controller_tx_flag = False
         self.remote_set_helm_state_tx_flag = False
+        self.remote_set_ros_launch_tx_flag = False
 
     #######################################################
     ############DCCL parsing###############################
@@ -251,6 +269,27 @@ class MvpC2Commander(Node):
             self.publish_dccl(proto)
             self.remote_set_helm_state_tx_flag = True
         return response        
+
+    #ros launch request callback
+    def roslaunch_srv_callback(self, request, response, index):
+        # Use some_int_value here
+        self.dccl_obj.load('RosLaunch')
+        proto = mvp_cmd_dccl_pb2.RosLaunch()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.index = index
+        proto.req = request.data
+
+        msg = f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {request.data}"
+        # Process request and prepare response
+        response.success = True
+        response.message = msg
+
+        if self.remote_set_ros_launch_tx_flag is False:
+            self.publish_dccl(proto)
+            self.remote_set_ros_launch_tx_flag = True
+        return response   
 
 def main(args=None):
     rclpy.init(args=args)

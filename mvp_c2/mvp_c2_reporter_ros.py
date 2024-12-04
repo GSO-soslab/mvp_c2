@@ -15,6 +15,7 @@ from geographic_msgs.msg import GeoPoseStamped
 # from mvp_msgs.srv import GetControlMode
 
 from include.dccl_checksum import check_dccl, package_dccl
+from include.roslaunch_manager import ROSLaunchManager
 
 # sys.path.append('../proto')  # Adjust path if needed
 import mvp_cmd_dccl_pb2
@@ -38,8 +39,16 @@ class MvpC2Reporter(Node):
         self.remote_id = self.declare_parameter('remote_id', 1).value
         self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 2.0).value
         self.local_mvp_active = self.declare_parameter('local_mvp_active', True).value
+        self.ser_wait_time = self.declare_parameter('service_wait_time', 1.0).value
+
         
         self.default_state_list = ['start', 'kill', 'survey', 'profiling', 'teleop']
+        self.launch_packages = ['mvp2_test_robot_bringup']
+        self.launch_file_names = ['bringup_simulation']
+        
+        ##roslauncher
+        self.roslauncher = ROSLaunchManager()
+
         # mvp_active meaning the local machine has mvp running so it can transfer its mvp related 
         # data to the remote machine
         #susbcribe to different topics running on the source
@@ -122,10 +131,10 @@ class MvpC2Reporter(Node):
                     self.dccl_obj.load('SetController')
                     proto_msg = self.dccl_obj.decode(data)
                     # print(proto_msg, flush = True)
-                    while not self.local_set_controller_client.wait_for_service(timeout_sec=1.0):
-                       self.get_logger().info(
-                            f"Waiting for service '{self.local_set_controller_client.srv_name}' to become available..."
-                        )
+                    self.local_set_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                    # self.get_logger().info(
+                    #         f"Waiting for service '{self.local_set_controller_client.srv_name}' to become available..."
+                    #     )
 
                     request = SetBool.Request()
                     request.data = proto_msg.status
@@ -144,10 +153,10 @@ class MvpC2Reporter(Node):
                     self.dccl_obj.load('SetHelm')
                     proto_msg = self.dccl_obj.decode(data)
                     # print(proto_msg, flush = True)
-                    while not self.local_set_helm_client.wait_for_service(timeout_sec=1.0):
-                       self.get_logger().info(
-                            f"Waiting for service '{self.local_set_helm_client.srv_name}' to become available..."
-                        )
+                    self.local_set_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                    # self.get_logger().info(
+                    #         f"Waiting for service '{self.local_set_helm_client.srv_name}' to become available..."
+                    #     )
 
                     request = ChangeState.Request()
                     request.state = self.default_state_list[proto_msg.state]
@@ -155,6 +164,22 @@ class MvpC2Reporter(Node):
                     request.caller = "dccl"
                     future = self.local_set_helm_client.call_async(request)
                     # rclpy.spin_until_future_complete(self, future)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
+            #roslaunch request
+            if message_id == 40: 
+                try:
+                    self.dccl_obj.load('RosLaunch')
+                    proto_msg = self.dccl_obj.decode(data)
+                    index = proto_msg.index
+                    req = proto_msg.req
+                    print(f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {req}")
+                    if req == True:
+                        self.roslauncher.start_launch(self.launch_packages[index], self.launch_file_names[index])
+                    else:
+                        self.roslauncher.stop_launch(self.launch_packages[index], self.launch_file_names[index])
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
@@ -230,14 +255,16 @@ class MvpC2Reporter(Node):
     #report controller backback
     def report_controller_state_callback(self):
         # Block until the service is available (1-second timeout)
-        while not self.local_report_controller_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info(f"Waiting for service '{self.local_report_controller_client.srv_name}' to become available...")
+        try:
+            self.local_report_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
+            # self.get_logger().info(f"Waiting for service '{self.local_report_controller_client.srv_name}' to become available...")
+            request = Trigger.Request()
+            future = self.local_report_controller_client.call_async(request)
 
-        request = Trigger.Request()
-        future = self.local_report_controller_client.call_async(request)
-
-        # Handle the response
-        future.add_done_callback(self.report_controller_state_callback_done)
+            # Handle the response
+            future.add_done_callback(self.report_controller_state_callback_done)
+        except:
+                print("Get Controller State Service Timeout")
 
     def report_controller_state_callback_done(self, future):
         response = future.result()
@@ -259,15 +286,18 @@ class MvpC2Reporter(Node):
 
     def report_helm_state_callback(self):
         # Block until the service is available (1-second timeout)
-        while not self.local_report_helm_client.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info(f"Waiting for service '{self.local_report_helm_client.srv_name}' to become available...")
+        try:
+            self.local_report_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
+            # self.get_logger().info(f"Waiting for service '{self.local_report_helm_client.srv_name}' to become available...")
 
-        request = GetState.Request()
-        request.name = ''
-        future = self.local_report_helm_client.call_async(request)
+            request = GetState.Request()
+            request.name = ''
+            future = self.local_report_helm_client.call_async(request)
 
-        # Handle the response
-        future.add_done_callback(self.report_helm_state_callback_done)
+            # Handle the response
+            future.add_done_callback(self.report_helm_state_callback_done)
+        except:
+                print("Get Helm State Service Timeout")
 
     def report_helm_state_callback_done(self, future):
         response = future.result()

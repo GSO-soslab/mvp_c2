@@ -157,7 +157,7 @@ message RosLaunch{
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
     required int32 index = 4 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
-    required bool state = 5 [ (dccl.field) = {min: 0 max: 2 precision: 0} ];
+    required bool req = 5 [ (dccl.field) = {min: 0 max: 2 precision: 0} ];
 }
 
 message ReportRosLaunch{
