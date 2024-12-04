@@ -47,7 +47,7 @@ class MvpC2Commander(Node):
         self.remote_controller_state_pub = self.create_publisher(Bool, topic_prefix + '/controller_state', 10)
         self.remote_helm_state_pub = self.create_publisher(HelmState, topic_prefix + '/helm/state', 10)
 
-        self.local_joy_sub = self.create_subscription(Joy, 'local/joy', self.joy_callback, 10)
+        self.local_joy_sub = self.create_subscription(Joy, topic_prefix + '/joy', self.joy_callback, 10)
 
         ##service for access remote controllers
         self.remote_set_controller_srv = self.create_service(SetBool, topic_prefix + '/controller/set', self.remote_set_controller_callback)

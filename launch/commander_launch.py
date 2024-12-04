@@ -36,4 +36,20 @@ def generate_launch_description():
             output='screen',
             prefix=['stdbuf -o L']
         ),
+
+        Node(
+            package="joy",
+            executable="joy_node",
+            name="joy_node",
+            namespace='commander',
+            output="screen",
+            parameters=[
+                {'coalesce_interval': 100},
+                {'autorepeat_rate': 0.0}
+            ],
+            remappings=[
+                ('joy', 'remote/id_2/joy'),
+            ]
+                
+        ),
     ])

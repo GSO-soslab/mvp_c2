@@ -53,9 +53,12 @@ class MvpC2Reporter(Node):
         self.local_set_helm_client = self.create_client(ChangeState, 'mvp_helm/change_state')
         self.local_report_helm_client = self.create_client(GetState, 'mvp_helm/get_state')
 
+        #joy stick publisher from base station
+        self.local_joy_pub = self.create_publisher(Joy, 'joy', 10)
+
         #DCCL byte array topic
         self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, 'mvp_c2/dccl_msg_tx', 10)
-
+        
         self.dccl_reporter_sub = self.create_subscription(UInt8MultiArray, 
                                                         'mvp_c2/dccl_msg_rx', 
                                                         self.dccl_rx_callback, 10)
@@ -108,7 +111,7 @@ class MvpC2Reporter(Node):
                     msg.axes = proto_msg.axes
                     msg.buttons = proto_msg.buttons
 
-                    self.remote_joy_pub.publish(msg)
+                    self.local_joy_pub.publish(msg)
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
