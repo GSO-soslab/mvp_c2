@@ -3,6 +3,7 @@ import threading
 import time
 import os
 import signal
+import psutil  
 
 class ROSLaunchManager:
     def __init__(self):
@@ -28,10 +29,15 @@ class ROSLaunchManager:
             key = (package_name, launch_file)
             process = self.node_processes.pop(key, None)
             if process:
-                # Terminate the entire process group
-                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-                process.wait()  # Wait for the process to terminate
-                print(f"Stopped launch file {launch_file} for package {package_name}.", flush=True)
+                try:
+                    parent = psutil.Process(process.pid)
+                    for child in parent.children(recursive=True):
+                        child.terminate()
+                    parent.terminate()
+                    parent.wait()  # Ensure the parent process has terminated
+                    print(f"Stopped launch file {launch_file} for package {package_name}.", flush=True)
+                except psutil.NoSuchProcess:
+                    print(f"Process for launch file {launch_file} not found.", flush=True)
             else:
                 print(f"Launch file {launch_file} for package {package_name} is not running.", flush=True)
 
