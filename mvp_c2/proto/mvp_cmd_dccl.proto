@@ -9,8 +9,8 @@ message Joy{
     required double time = 1 [ (dccl.field) = {min: 1000000000 max: 2000000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
-    repeated double axes = 4 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 2 max_repeat: 2 } ];
-    repeated int32 buttons = 5 [ (dccl.field) = {min: -2 max: 2 precision: 0 max_repeat: 9 } ];
+    repeated double axes = 4 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 2 max_repeat: 6 } ];
+    repeated int32 buttons = 5 [ (dccl.field) = {min: -2 max: 2 precision: 0 max_repeat: 12 } ];
 }
 
 message PWM{
