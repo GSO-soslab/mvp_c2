@@ -39,7 +39,7 @@ setup(
             'mvp_c2_reporter_ros = mvp_c2.mvp_c2_reporter_ros:main',
             'mvp_c2_commander_ros = mvp_c2.mvp_c2_commander_ros:main',
             'mvp_c2_udp_comm = mvp_c2.mvp_c2_udp_comm:main',
-            'mvp_c2_dccl_ros = mvp_c2.mvp_c2_dccl_ros:main',
+            # 'mvp_c2_dccl_ros = mvp_c2.mvp_c2_dccl_ros:main',
             'mvp_c2_serial_comm = mvp_c2.mvp_c2_serial_comm:main'
         ],
     },
