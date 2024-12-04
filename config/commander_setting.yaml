@@ -1,0 +1,6 @@
+commander/mvp_c2_commander:
+  ros__parameters:
+    helm_state_list: ['start', 'kill', 'survey', 'profiling', 'teleop']
+    launch_packages: ['mvp2_test_robot_bringup', 'mvp2_test_robot_bringup']
+    launch_files: ['bringup_simulation', 'bringup_test']
+    dccl_tx_interval: 0.5

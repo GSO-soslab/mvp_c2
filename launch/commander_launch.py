@@ -11,6 +11,7 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
 
     comm_setting_file = os.path.join(get_package_share_directory('mvp_c2'), 'config', 'serial_setting.yaml') 
+    commander_setting_file = os.path.join(get_package_share_directory('mvp_c2'), 'config', 'commander_setting.yaml') 
 
     return LaunchDescription([
         
@@ -35,9 +36,7 @@ def generate_launch_description():
             name='mvp_c2_commander',
             output='screen',
             prefix=['stdbuf -o L'],
-            parameters=[
-                {'dccl_tx_interval': 0.5},
-            ],
+            parameters=[commander_setting_file],
         ),
 
         Node(

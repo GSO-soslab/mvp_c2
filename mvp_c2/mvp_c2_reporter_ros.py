@@ -42,10 +42,19 @@ class MvpC2Reporter(Node):
         self.ser_wait_time = self.declare_parameter('service_wait_time', 1.0).value
 
         
-        self.default_state_list = ['start', 'kill', 'survey', 'profiling', 'teleop']
-        self.launch_packages = ['mvp2_test_robot_bringup']
-        self.launch_file_names = ['bringup_simulation']
+        # self.default_state_list = ['start', 'kill', 'survey', 'profiling', 'teleop']
+        # self.launch_packages = ['mvp2_test_robot_bringup']
+        # self.launch_file_names = ['bringup_simulation']
+
+        self.declare_parameter('helm_state_list', [''])
+        self.default_state_list = self.get_parameter('helm_state_list').get_parameter_value().string_array_value
         
+        self.declare_parameter('launch_packages', [''])
+        self.launch_packages = self.get_parameter('launch_packages').get_parameter_value().string_array_value
+     
+        self.declare_parameter('launch_files', [''])
+        self.launch_file_names = self.get_parameter('launch_files').get_parameter_value().string_array_value
+
         ##roslauncher
         self.roslauncher = ROSLaunchManager()
 

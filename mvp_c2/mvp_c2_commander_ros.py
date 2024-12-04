@@ -37,10 +37,16 @@ class MvpC2Commander(Node):
         self.local_id = self.declare_parameter('local_id', 1).value
         self.remote_id = self.declare_parameter('remote_id', 2).value
         self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 1.0).value
+
+        # self.default_state_list = ['start', 'kill', 'survey', 'profiling', 'teleop']
+        self.declare_parameter('helm_state_list', [''])
+        self.default_state_list = self.get_parameter('helm_state_list').get_parameter_value().string_array_value
         
-        self.default_state_list = ['start', 'kill', 'survey', 'profiling', 'teleop']
-        self.launch_packages = ['mvp2_test_robot_bringup']
-        self.launch_file_names = ['bringup_simulation']
+        self.declare_parameter('launch_packages', [''])
+        self.launch_packages = self.get_parameter('launch_packages').get_parameter_value().string_array_value
+     
+        self.declare_parameter('launch_files', [''])
+        self.launch_file_names = self.get_parameter('launch_files').get_parameter_value().string_array_value
 
         # mvp_active meaning the local machine has mvp running so it can transfer its mvp related 
         ##publish information parsed from dccl to ros topic
