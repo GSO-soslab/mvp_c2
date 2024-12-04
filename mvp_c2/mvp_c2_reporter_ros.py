@@ -14,7 +14,7 @@ from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
 # from mvp_msgs.srv import GetControlMode
 
-from dccl_checksum import check_dccl, package_dccl
+from include.dccl_checksum import check_dccl, package_dccl
 
 # sys.path.append('../proto')  # Adjust path if needed
 import mvp_cmd_dccl_pb2

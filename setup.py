@@ -21,8 +21,9 @@ setup(
 
         (os.path.join('share', package_name, 'launch'), glob('launch/*')),
         (os.path.join('share', package_name, 'config'), glob('config/*')),
-        (os.path.join('lib', package_name), glob('mvp_c2/include/*')),
-
+        (os.path.join('lib', package_name, 'include'), glob('mvp_c2/include/*')),
+        # (os.path.join('share', package_name, 'include'), glob('mvp_c2/include/*')),
+        
 
     ],
     install_requires=['setuptools', 'std_msgs','nav_msgs', 'dccl'],
@@ -35,8 +36,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'mvp_c2_reporter = mvp_c2.mvp_c2_reporter:main',
-            'mvp_c2_commander = mvp_c2.mvp_c2_commander:main',
+            'mvp_c2_reporter_ros = mvp_c2.mvp_c2_reporter_ros:main',
+            'mvp_c2_commander_ros = mvp_c2.mvp_c2_commander_ros:main',
             'mvp_c2_udp_comm = mvp_c2.mvp_c2_udp_comm:main',
             'mvp_c2_dccl_ros = mvp_c2.mvp_c2_dccl_ros:main',
             'mvp_c2_serial_comm = mvp_c2.mvp_c2_serial_comm:main'

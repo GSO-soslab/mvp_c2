@@ -14,7 +14,7 @@ from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
 # from mvp_msgs.srv import GetControlMode
 
-from dccl_checksum import check_dccl, package_dccl
+from include.dccl_checksum import check_dccl, package_dccl
 
 # sys.path.append('../proto')  # Adjust path if needed
 import mvp_cmd_dccl_pb2
@@ -30,7 +30,7 @@ package_name = 'mvp_c2'
 class MvpC2Commander(Node):
 
     def __init__(self):
-        super().__init__('mvp_c2_commander')
+        super().__init__('mvp_c2_commander_ros')
 
         # ns = self.get_namespace()
 
@@ -41,7 +41,7 @@ class MvpC2Commander(Node):
         self.default_state_list = ['start', 'kill', 'survey', 'profiling', 'teleop']
         # mvp_active meaning the local machine has mvp running so it can transfer its mvp related 
         ##publish information parsed from dccl to ros topic
-        topic_prefix = 'remote/id_' + self.remote_id
+        topic_prefix = 'remote/id_' + str(self.remote_id)
         self.remote_odom_pub = self.create_publisher(Odometry, topic_prefix + '/odometry', 10)
         self.remote_geopose_pub = self.create_publisher(GeoPoseStamped, topic_prefix + '/geopose', 10)
         self.remote_controller_state_pub = self.create_publisher(Bool, topic_prefix + '/controller_state', 10)
@@ -87,7 +87,9 @@ class MvpC2Commander(Node):
     ###parsing dccl
     def dccl_rx_callback(self,msg):
         print("got dccl", flush=True)
-        flag, data = check_dccl(msg.data)
+        # print(msg.data)
+        flag,data = check_dccl(msg.data)
+                
         if flag == True:
             message_id = self.dccl_obj.id(data)
             # print(message_id, flush = True)

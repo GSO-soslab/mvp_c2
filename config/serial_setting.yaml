@@ -1,0 +1,9 @@
+/commander/commander_c2_serial_comm:
+  ros__parameters:
+    port: /dev/ttyUSB0
+    baudrate: 115200
+
+/reporter/reporter_c2_serial_comm:
+  ros__parameters:
+    port: /dev/ttyUSB1
+    baudrate: 115200
