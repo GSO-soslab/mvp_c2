@@ -36,7 +36,7 @@ class MvpC2Commander(Node):
 
         self.local_id = self.declare_parameter('local_id', 1).value
         self.remote_id = self.declare_parameter('remote_id', 2).value
-        self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 2.0).value
+        self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 1.0).value
         
         self.default_state_list = ['start', 'kill', 'survey', 'profiling', 'teleop']
         # mvp_active meaning the local machine has mvp running so it can transfer its mvp related 
@@ -86,7 +86,7 @@ class MvpC2Commander(Node):
     #######################################################
     ###parsing dccl
     def dccl_rx_callback(self,msg):
-        print("got dccl", flush=True)
+        # print("got dccl", flush=True)
         # print(msg.data)
         flag,data = check_dccl(msg.data)
                 

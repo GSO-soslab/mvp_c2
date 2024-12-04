@@ -27,14 +27,17 @@ def generate_launch_description():
                 ('dccl_msg_rx', 'mvp_c2/dccl_msg_rx'),
             ]
         ),
-
+    #commander node
         Node(
             package='mvp_c2',
             namespace='commander',
             executable='mvp_c2_commander_ros',
             name='mvp_c2_commander',
             output='screen',
-            prefix=['stdbuf -o L']
+            prefix=['stdbuf -o L'],
+            parameters=[
+                {'dccl_tx_interval': 0.5},
+            ],
         ),
 
         Node(
@@ -44,7 +47,7 @@ def generate_launch_description():
             namespace='commander',
             output="screen",
             parameters=[
-                {'coalesce_interval': 100},
+                {'coalesce_interval': 10},
                 {'autorepeat_rate': 0.0}
             ],
             remappings=[
