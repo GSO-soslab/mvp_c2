@@ -75,8 +75,8 @@ class MvpC2Reporter(Node):
         self.local_report_helm_state_tx_flag = False
 
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
-        self.timer2 = self.create_timer(self.dccl_tx_interval, self.report_controller_state_callback)
-        self.timer3 = self.create_timer(self.dccl_tx_interval, self.report_helm_state_callback)
+        # self.timer2 = self.create_timer(self.dccl_tx_interval, self.report_controller_state_callback)
+        # self.timer3 = self.create_timer(self.dccl_tx_interval, self.report_helm_state_callback)
 
     def reset_dccl_tx_flag(self):
         self.local_odom_tx_flag = False
