@@ -3,7 +3,7 @@ from rclpy.node import Node
 import threading
 
 from include.serial_interface import SerialInterface
-from std_msgs.msg import UInt8MultiArray
+from std_msgs.msg import UInt8MultiArray, ByteMultiArray
 
 
 class MvpC2SerialRos(Node):
@@ -20,10 +20,10 @@ class MvpC2SerialRos(Node):
         print(f"port: {self.port}, baud: {self.baud} is open", flush=True)
 
         ##subscribe to dccl tx topic
-        self.dccl_tx_sub = self.create_subscription(UInt8MultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 10)
+        self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 100)
 
         ##publish to dccl rx topic
-        self.ddcl_rx_pub = self.create_publisher(UInt8MultiArray, 'dccl_msg_rx', 10)
+        self.ddcl_rx_pub = self.create_publisher(ByteMultiArray, 'dccl_msg_rx', 100)
         
         self.running = True
         threading.Thread(target=self.dccl_rx_callback, daemon=True).start()

@@ -4,11 +4,11 @@ import dccl
 import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from std_msgs.msg import UInt8MultiArray, Bool
+from std_msgs.msg import UInt8MultiArray, Bool, ByteMultiArray
 from sensor_msgs.msg import Joy
-from mvp_msgs.srv import SetString
-from mvp_msgs.srv import ChangeState, GetState
-from mvp_msgs.msg import HelmState
+# from mvp_msgs.srv import SetString
+from mvp_msgs.srv import ChangeState, GetState, GetWaypoints
+# from mvp_msgs.msg import HelmState
 
 from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
@@ -70,14 +70,14 @@ class MvpC2Reporter(Node):
         self.local_report_controller_client = self.create_client(Trigger, 'controller/get_state')
         self.local_set_helm_client = self.create_client(ChangeState, 'mvp_helm/change_state')
         self.local_report_helm_client = self.create_client(GetState, 'mvp_helm/get_state')
-
+        self.local_report_wpt_client = self.create_client(GetWaypoints, 'mvp_helm/path')
         #joy stick publisher from base station
         self.local_joy_pub = self.create_publisher(Joy, 'joy', 10)
 
         #DCCL byte array topic
-        self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, 'mvp_c2/dccl_msg_tx', 10)
+        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/dccl_msg_tx', 10)
         
-        self.dccl_reporter_sub = self.create_subscription(UInt8MultiArray, 
+        self.dccl_reporter_sub = self.create_subscription(ByteMultiArray, 
                                                         'mvp_c2/dccl_msg_rx', 
                                                         self.dccl_rx_callback, 10)
 
@@ -94,16 +94,20 @@ class MvpC2Reporter(Node):
         self.local_geopose_tx_flag = False
         self.local_report_controller_state_tx_flag = False
         self.local_report_helm_state_tx_flag = False
+        self.local_report_wpt_tx_flag = False
 
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
         self.timer2 = self.create_timer(self.dccl_tx_interval, self.report_controller_state_callback)
         self.timer3 = self.create_timer(self.dccl_tx_interval, self.report_helm_state_callback)
+        self.timer4 = self.create_timer(self.dccl_tx_interval, self.report_wpt_callback)
 
     def reset_dccl_tx_flag(self):
         self.local_odom_tx_flag = False
         self.local_geopose_tx_flag = False
         self.local_report_controller_state_tx_flag = False
         self.local_report_helm_state_tx_flag = False
+        self.local_report_wpt_tx_flag = False
+
 
     #######################################################
     ############DCCL parsing###############################
@@ -128,7 +132,6 @@ class MvpC2Reporter(Node):
                     msg.header.stamp.nanosec = nanosec
                     msg.axes = proto_msg.axes
                     msg.buttons = proto_msg.buttons
-
                     self.local_joy_pub.publish(msg)
                 except Exception as e:
                     # Print the exception message for debugging
@@ -195,7 +198,7 @@ class MvpC2Reporter(Node):
 
     ##publish dccl 
     def publish_dccl(self, proto):
-        dccl_msg = UInt8MultiArray()
+        dccl_msg = ByteMultiArray()
         dccl_msg.data = self.dccl_obj.encode(proto)
         dccl_msg.data = package_dccl(dccl_msg.data)
         self.ddcl_reporter_pub.publish(dccl_msg)
@@ -229,7 +232,6 @@ class MvpC2Reporter(Node):
         proto.pqr.extend([ msg.twist.twist.angular.x,
                            msg.twist.twist.angular.y, 
                            msg.twist.twist.angular.z ]) 
-        print
         proto.frame_id = msg.header.frame_id
         proto.child_frame_id = msg.child_frame_id
         
@@ -336,7 +338,62 @@ class MvpC2Reporter(Node):
             # print(proto, flush = True)
             self.local_report_helm_state_tx_flag = True
         return response   
- 
+    
+    def report_wpt_callback(self):
+        try:
+            self.local_report_wpt_client.wait_for_service(timeout_sec=self.ser_wait_time)
+            # self.get_logger().info(f"Waiting for service '{self.local_report_wpt_client.srv_name}' to become available...")
+
+            request = GetWaypoints.Request()
+            request.count.data = 0
+            future = self.local_report_wpt_client.call_async(request)
+
+            # Handle the response
+            future.add_done_callback(self.report_wpt_callback_done)
+        except:
+                print("Get Helm State Service Timeout")
+
+    def report_wpt_callback_done(self, future):
+        response = future.result()
+        # print(response)
+        # self.get_logger().info(f'Service response: {response}')
+        ##make dccl
+        self.dccl_obj.load('ReportWpt')
+        proto = mvp_cmd_dccl_pb2.ReportWpt()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.wpt_size = len(response.wpt)
+        # print(proto.wpt_size, flush=True)
+        for i in range(proto.wpt_size):
+            proto.latitude.append(response.wpt[i].ll_wpt.latitude)
+            proto.longitude.append(response.wpt[i].ll_wpt.longitude)
+            proto.altitude.append(response.wpt[i].ll_wpt.altitude)
+            # lat_int = int(response.wpt[i].ll_wpt.latitude)
+            # lat_deci = int(abs(response.wpt[i].ll_wpt.latitude - lat_int)*100000000)
+            # proto.latitude_deg.append(lat_int)
+            # proto.latitude_deci.append(lat_deci)
+
+            # lon_int = int(response.wpt[i].ll_wpt.longitude)
+            # lon_deci = int(abs(response.wpt[i].ll_wpt.longitude - lon_int)*100000000)
+            # proto.longitude_deg.append(lon_int)
+            # proto.longitude_deci.append(lon_deci)
+
+            # alt_int = int(response.wpt[i].ll_wpt.altitude)
+            # alt_deci = int(abs(response.wpt[i].ll_wpt.altitude - alt_int)*100000000)
+            # proto.altitude_deg.append(alt_int)
+            # proto.altitude_deci.append(alt_deci)                                      
+
+        if self.local_report_wpt_tx_flag is False:
+            dccl_msg = ByteMultiArray()
+            dccl_msg.data = self.dccl_obj.encode(proto)
+            dccl_msg.data = package_dccl(dccl_msg.data)
+            print(len(dccl_msg.data))
+            print(dccl_msg.data, flush=True)
+            self.publish_dccl(proto)
+            # print(proto, flush = True)
+            self.local_report_wpt_tx_flag = True
+        return response   
 
 def main(args=None):
     rclpy.init(args=args)
@@ -351,5 +408,6 @@ def main(args=None):
     rclpy.shutdown()
 
 
+    
 if __name__ == '__main__':
     main()

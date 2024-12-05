@@ -4,8 +4,9 @@ import dccl
 import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from std_msgs.msg import UInt8MultiArray, Bool
+from std_msgs.msg import UInt8MultiArray, Bool, ByteMultiArray
 from sensor_msgs.msg import Joy
+from geographic_msgs.msg import GeoPath
 from mvp_msgs.srv import SetString
 from mvp_msgs.srv import ChangeState, GetState
 from mvp_msgs.msg import HelmState
@@ -55,6 +56,7 @@ class MvpC2Commander(Node):
         self.remote_geopose_pub = self.create_publisher(GeoPoseStamped, topic_prefix + '/geopose', 10)
         self.remote_controller_state_pub = self.create_publisher(Bool, topic_prefix + '/controller_state', 10)
         self.remote_helm_state_pub = self.create_publisher(HelmState, topic_prefix + '/helm/state', 10)
+        self.remote_wpt_report_pub = self.create_publisher(GeoPath, topic_prefix + '/survey/geopath', 10)
 
         self.local_joy_sub = self.create_subscription(Joy, topic_prefix + '/joy', self.joy_callback, 10)
 
@@ -76,9 +78,9 @@ class MvpC2Commander(Node):
             print("Launch packages and name entries doesn't match", flush = True)
 
         #DCCL byte array topic
-        self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, 'mvp_c2/dccl_msg_tx', 10)
+        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/dccl_msg_tx', 10)
 
-        self.dccl_reporter_sub = self.create_subscription(UInt8MultiArray, 
+        self.dccl_reporter_sub = self.create_subscription(ByteMultiArray, 
                                                         'mvp_c2/dccl_msg_rx', 
                                                         self.dccl_rx_callback, 10)
 
@@ -116,7 +118,7 @@ class MvpC2Commander(Node):
                 
         if flag == True:
             message_id = self.dccl_obj.id(data)
-            # print(message_id, flush = True)
+            print(message_id, flush = True)
             #odometry 
             if message_id == 3:
                 try:
@@ -209,10 +211,30 @@ class MvpC2Commander(Node):
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
-
+            ## report waypoints
+            if message_id == 33:
+                print("got Wpt", flush =True)
+                try:
+                    self.dccl_obj.load('ReportWpt')
+                    proto_msg = self.dccl_obj.decode(data)
+                    print(proto_msg, flush = True)
+                    # msg = GeoPath()
+                    # nanosec = int((proto_msg.time - sec) * 1e9)  
+                    # msg.header.stamp.sec = sec
+                    # msg.header.stamp.nanosec = nanosec
+                    # for i in range(proto_msg.wpt_size):
+                    #     msg.poses[i].pose.position.latitude = proto_msg.latitude[i]
+                    #     msg.poses[i].pose.position.longitude = proto_msg.longitude[i]
+                    #     msg.poses[i].pose.position.altitude = proto_msg.altitude[i]
+                    
+                    # self.remote_wpt_report_pub.publish(msg)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+    
     ##publish dccl 
     def publish_dccl(self, proto):
-        dccl_msg = UInt8MultiArray()
+        dccl_msg = ByteMultiArray()
         dccl_msg.data = self.dccl_obj.encode(proto)
         dccl_msg.data = package_dccl(dccl_msg.data)
         self.ddcl_reporter_pub.publish(dccl_msg)

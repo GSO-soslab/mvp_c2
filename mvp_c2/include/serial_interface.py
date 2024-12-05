@@ -9,6 +9,7 @@ class SerialInterface:
         # message = data
         self.ser.write(data)
     
+    
     def send_packet(self, data):
         max_bytes = 20
         # message = data
@@ -25,6 +26,11 @@ class SerialInterface:
             return data
         else:
             return False
+
+    def read(self):
+        data =[]
+        while(self.ser.in_waiting>0):
+            
 
     def close(self):
         self.ser.close()    

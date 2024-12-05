@@ -14,6 +14,8 @@ def check_dccl(data):
         #check the header
         if data[:3] != bytearray([36, 36, 36]): 
             print("Error: Header imcomplete")
+            print(data, flush = True)
+            print(f'data size = {len(data)}')
             return flag, data_out
         ##check the * char
         elif data[-4] != 42:
