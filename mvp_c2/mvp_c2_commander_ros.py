@@ -7,8 +7,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool, ByteMultiArray
 from sensor_msgs.msg import Joy
 from geographic_msgs.msg import GeoPath
-from mvp_msgs.srv import SetString
-from mvp_msgs.srv import ChangeState, GetState
+from mvp_msgs.srv import SetString, SendWaypoints
 from mvp_msgs.msg import HelmState
 
 from std_srvs.srv import Trigger, SetBool
@@ -63,6 +62,7 @@ class MvpC2Commander(Node):
         ##service for access remote controllers
         self.remote_set_controller_srv = self.create_service(SetBool, topic_prefix + '/controller/set', self.remote_set_controller_callback)
         self.remote_set_state_srv = self.create_service(SetString, topic_prefix + '/mvp_helm/change_state', self.remote_set_helm_state_callback)
+        self.remote_set_wpt_srv = self.create_service(SendWaypoints, topic_prefix + '/mvp_helm/set_waypoints', self.remote_set_waypoints_callback)
 
         ##service for roslaunch files
         if len(self.launch_packages) == len(self.launch_file_names):
@@ -98,7 +98,7 @@ class MvpC2Commander(Node):
         self.remote_set_controller_tx_flag = False
         self.remote_set_helm_state_tx_flag = False
         self.remote_set_ros_launch_tx_flag = False
-
+        self.remote_set_wpt_tx_flag = False
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
 
     def reset_dccl_tx_flag(self):
@@ -106,6 +106,7 @@ class MvpC2Commander(Node):
         self.remote_set_controller_tx_flag = False
         self.remote_set_helm_state_tx_flag = False
         self.remote_set_ros_launch_tx_flag = False
+        self.remote_set_wpt_tx_flag = False
 
     #######################################################
     ############DCCL parsing###############################
@@ -299,6 +300,35 @@ class MvpC2Commander(Node):
             self.publish_dccl(proto)
             self.remote_set_helm_state_tx_flag = True
         return response        
+
+    #set waypoints
+    def remote_set_waypoints_callback(self, request, response):
+        self.dccl_obj.load('SetWpt')
+        proto = mvp_cmd_dccl_pb2.SetWpt()
+        proto.time = round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.wpt_size = len(request.wpt)
+        if len(request.wpt>0):
+            for i in range(proto.wpt_size):
+                proto.latitude.append(request.wpt[i].ll_wpt.latitude*100)
+                proto.longitude.append(request.wpt[i].ll_wpt.longitude*100)
+                proto.altitude.append(request.wpt[i].ll_wpt.altitude) 
+
+            if self.remote_set_wpt_tx_flag is False:
+                self.publish_dccl(proto)
+                self.remote_set_wpt_tx_flag = True
+                
+                response.success = True
+                return response
+            
+            response.success = False
+            return response
+            
+        response.success = False
+        return response
+
+
 
     #ros launch request callback
     def roslaunch_srv_callback(self, request, response, index):

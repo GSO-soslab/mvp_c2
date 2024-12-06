@@ -7,8 +7,8 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool, ByteMultiArray
 from sensor_msgs.msg import Joy
 # from mvp_msgs.srv import SetString
-from mvp_msgs.srv import ChangeState, GetState, GetWaypoints
-# from mvp_msgs.msg import HelmState
+from mvp_msgs.srv import ChangeState, GetState, GetWaypoints, SendWaypoints
+from mvp_msgs.msg import Waypoint
 
 from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
@@ -71,6 +71,7 @@ class MvpC2Reporter(Node):
         self.local_set_helm_client = self.create_client(ChangeState, 'mvp_helm/change_state')
         self.local_report_helm_client = self.create_client(GetState, 'mvp_helm/get_state')
         self.local_report_wpt_client = self.create_client(GetWaypoints, 'mvp_helm/path')
+        self.local_set_wpt_client = self.create_client(SendWaypoints, 'mvp_helm/set_waypoints')
         #joy stick publisher from base station
         self.local_joy_pub = self.create_publisher(Joy, 'joy', 10)
 
@@ -189,6 +190,26 @@ class MvpC2Reporter(Node):
                         self.roslauncher.start_launch(self.launch_packages[index], self.launch_file_names[index])
                     else:
                         self.roslauncher.stop_launch(self.launch_packages[index], self.launch_file_names[index])
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
+            ##waypoint set dccl
+            if message_id == 32:
+                try:
+                    self.dccl_obj.load('SetWpt')
+                    proto_msg = self.dccl_obj.decode(data)
+                    self.local_set_wpt_client.wait_for_service(timeout_sec=self.ser_wait_time)
+
+                    request = SendWaypoints.Request()  
+                    request.type = 'geopath'
+
+                    request.wpt = [Waypoint() for _ in range(proto_msg.wpt_size)]
+                    for i in range(proto_msg.wpt_size):
+                        request.wpt[i].ll_wpt.latitude = proto_msg.latitude[i]*0.01
+                        request.wpt[i].ll_wpt.longitude = proto_msg.longitude[i]*0.01
+                        request.wpt[i].ll_wpt.altitude = proto_msg.altitude[i]
+                    future = self.local_set_wpt_client.call_async(request)
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
