@@ -27,10 +27,6 @@ class SerialInterface:
         else:
             return False
 
-    def read(self):
-        data =[]
-        while(self.ser.in_waiting>0):
-            
 
     def close(self):
         self.ser.close()    

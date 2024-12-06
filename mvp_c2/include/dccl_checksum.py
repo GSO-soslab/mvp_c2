@@ -13,13 +13,13 @@ def check_dccl(data):
         data_out = data  #
         #check the header
         if data[:3] != bytearray([36, 36, 36]): 
-            print("Error: Header imcomplete")
-            print(data, flush = True)
-            print(f'data size = {len(data)}')
+            print("Error: Header imcomplete", flush = True)
+            # print(data, flush = True)
+            # print(f'data size = {len(data)}')
             return flag, data_out
         ##check the * char
         elif data[-4] != 42:
-            print("Error: Data does not end with '*'")
+            print("Error: Data does not end with '*'", flush = True)
             return flag, data_out
         #get checksum string
         elif(len(data)<7):

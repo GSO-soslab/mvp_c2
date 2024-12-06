@@ -3,7 +3,7 @@ from rclpy.node import Node
 import threading
 
 from include.serial_interface import SerialInterface
-from std_msgs.msg import UInt8MultiArray, ByteMultiArray
+from std_msgs.msg import ByteMultiArray, UInt8MultiArray
 
 
 class MvpC2SerialRos(Node):
@@ -20,10 +20,10 @@ class MvpC2SerialRos(Node):
         print(f"port: {self.port}, baud: {self.baud} is open", flush=True)
 
         ##subscribe to dccl tx topic
-        self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 100)
+        self.dccl_tx_sub = self.create_subscription(UInt8MultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 10)
 
         ##publish to dccl rx topic
-        self.ddcl_rx_pub = self.create_publisher(ByteMultiArray, 'dccl_msg_rx', 100)
+        self.ddcl_rx_pub = self.create_publisher(UInt8MultiArray, 'dccl_msg_rx', 10)
         
         self.running = True
         threading.Thread(target=self.dccl_rx_callback, daemon=True).start()
@@ -36,16 +36,26 @@ class MvpC2SerialRos(Node):
 
     def dccl_rx_callback(self):
         while self.running:
-            try:
-                data = self.ser.read()
-                if(data is not False):
-                    msg = UInt8MultiArray()
-                    msg.data = data
-                    # print("publishing", flush = True)
-                    self.ddcl_rx_pub.publish(msg)
-            except Exception as e:
-                print(f"Error in dccl_rx_callback: {e}")
-                break
+            # try:
+            # data = bytearray([])
+            # data = self.ser.read()
+            data = bytearray([])
+            counter = 1
+            while True:
+                temp_data = self.ser.read()
+                if temp_data is not False:
+                    # print(temp_data)
+                    data = data + temp_data
+                    counter = counter + 1
+                    # print(f'*={data[-4]} and length = {len(temp_data)}', flush=True)
+                    if len(data) >= 3 and data[-4] == 42:
+                        msg = UInt8MultiArray()
+                        msg.data = data
+                        print(msg.data)
+                        self.ddcl_rx_pub.publish(msg)
+                        break 
+                    if counter == 5:
+                        break
 
     def close_udp(self):
         self.running = False

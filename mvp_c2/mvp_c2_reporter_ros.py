@@ -75,9 +75,9 @@ class MvpC2Reporter(Node):
         self.local_joy_pub = self.create_publisher(Joy, 'joy', 10)
 
         #DCCL byte array topic
-        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/dccl_msg_tx', 10)
+        self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, 'mvp_c2/dccl_msg_tx', 10)
         
-        self.dccl_reporter_sub = self.create_subscription(ByteMultiArray, 
+        self.dccl_reporter_sub = self.create_subscription(UInt8MultiArray, 
                                                         'mvp_c2/dccl_msg_rx', 
                                                         self.dccl_rx_callback, 10)
 
@@ -198,7 +198,7 @@ class MvpC2Reporter(Node):
 
     ##publish dccl 
     def publish_dccl(self, proto):
-        dccl_msg = ByteMultiArray()
+        dccl_msg = UInt8MultiArray()
         dccl_msg.data = self.dccl_obj.encode(proto)
         dccl_msg.data = package_dccl(dccl_msg.data)
         self.ddcl_reporter_pub.publish(dccl_msg)
@@ -368,28 +368,15 @@ class MvpC2Reporter(Node):
         for i in range(proto.wpt_size):
             proto.latitude.append(response.wpt[i].ll_wpt.latitude)
             proto.longitude.append(response.wpt[i].ll_wpt.longitude)
-            proto.altitude.append(response.wpt[i].ll_wpt.altitude)
-            # lat_int = int(response.wpt[i].ll_wpt.latitude)
-            # lat_deci = int(abs(response.wpt[i].ll_wpt.latitude - lat_int)*100000000)
-            # proto.latitude_deg.append(lat_int)
-            # proto.latitude_deci.append(lat_deci)
-
-            # lon_int = int(response.wpt[i].ll_wpt.longitude)
-            # lon_deci = int(abs(response.wpt[i].ll_wpt.longitude - lon_int)*100000000)
-            # proto.longitude_deg.append(lon_int)
-            # proto.longitude_deci.append(lon_deci)
-
-            # alt_int = int(response.wpt[i].ll_wpt.altitude)
-            # alt_deci = int(abs(response.wpt[i].ll_wpt.altitude - alt_int)*100000000)
-            # proto.altitude_deg.append(alt_int)
-            # proto.altitude_deci.append(alt_deci)                                      
+            proto.altitude.append(response.wpt[i].ll_wpt.altitude)    
+            # print (i)                           
 
         if self.local_report_wpt_tx_flag is False:
-            dccl_msg = ByteMultiArray()
-            dccl_msg.data = self.dccl_obj.encode(proto)
-            dccl_msg.data = package_dccl(dccl_msg.data)
-            print(len(dccl_msg.data))
-            print(dccl_msg.data, flush=True)
+            # dccl_msg = UInt8MultiArray()
+            # dccl_msg.data = self.dccl_obj.encode(proto)
+            # dccl_msg.data = package_dccl(dccl_msg.data)
+            # print(len(dccl_msg.data))
+            # print(dccl_msg.data, flush=True)
             self.publish_dccl(proto)
             # print(proto, flush = True)
             self.local_report_wpt_tx_flag = True

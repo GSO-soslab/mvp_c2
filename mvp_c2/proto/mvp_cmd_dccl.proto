@@ -146,12 +146,6 @@ message ReportWpt{
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];    
     required int32 wpt_size = 4 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
-    // repeated int32 latitude_deg = 5 [ (dccl.field) = {min: -100 max: 100 precision: 0 max_repeat: 10 } ];
-    // repeated int32 latitude_deci = 6[ (dccl.field) = {min: 0 max: 100000000000.0 precision: 0 max_repeat: 10 } ];
-    // repeated int32 longitude_deg = 7 [ (dccl.field) = {min: -180 max: 180 precision: 0 max_repeat: 10 } ];
-    // repeated int32 longitude_deci = 8[ (dccl.field) = {min: 0 max: 100000000000.0 precision: 0 max_repeat: 10 } ];
-    // repeated int32 altitude_deg = 9 [ (dccl.field) = {min: -100 max: 20 precision: 0 max_repeat: 10 } ];
-    // repeated int32 altitude_deci = 10[ (dccl.field) = {min: 0 max: 100000000000.0 precision: 0 max_repeat: 10 } ];
     repeated double latitude = 5 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 7 max_repeat: 10 } ];
     repeated double longitude = 6 [ (dccl.field) = {min: -200.0 max: 200.0 precision: 7 max_repeat: 10 } ];
     repeated double altitude = 7 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 7 max_repeat: 10 } ];
