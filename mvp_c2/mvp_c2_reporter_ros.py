@@ -4,7 +4,7 @@ import dccl
 import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from std_msgs.msg import UInt8MultiArray, Bool, ByteMultiArray
+from std_msgs.msg import Bool, ByteMultiArray
 from sensor_msgs.msg import Joy
 # from mvp_msgs.srv import SetString
 from mvp_msgs.srv import ChangeState, GetState, GetWaypoints
@@ -75,9 +75,9 @@ class MvpC2Reporter(Node):
         self.local_joy_pub = self.create_publisher(Joy, 'joy', 10)
 
         #DCCL byte array topic
-        self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, 'mvp_c2/dccl_msg_tx', 10)
+        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/dccl_msg_tx', 10)
         
-        self.dccl_reporter_sub = self.create_subscription(UInt8MultiArray, 
+        self.dccl_reporter_sub = self.create_subscription(ByteMultiArray, 
                                                         'mvp_c2/dccl_msg_rx', 
                                                         self.dccl_rx_callback, 10)
 
@@ -115,7 +115,10 @@ class MvpC2Reporter(Node):
     ###parsing dccl
     def dccl_rx_callback(self,msg):
         # print("got dccl", flush=True)
-        flag, data = check_dccl(msg.data)
+        bdata = bytearray(ord(c) for c in msg.data)
+        flag, data = check_dccl(bdata)
+        # flag, data = check_dccl(msg.data)
+
         if flag == True:
             message_id = self.dccl_obj.id(data)
             # print(message_id, flush = True)
@@ -142,12 +145,7 @@ class MvpC2Reporter(Node):
                 try: 
                     self.dccl_obj.load('SetController')
                     proto_msg = self.dccl_obj.decode(data)
-                    # print(proto_msg, flush = True)
                     self.local_set_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
-                    # self.get_logger().info(
-                    #         f"Waiting for service '{self.local_set_controller_client.srv_name}' to become available..."
-                    #     )
-
                     request = SetBool.Request()
                     request.data = proto_msg.status
 
@@ -166,9 +164,6 @@ class MvpC2Reporter(Node):
                     proto_msg = self.dccl_obj.decode(data)
                     # print(proto_msg, flush = True)
                     self.local_set_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
-                    # self.get_logger().info(
-                    #         f"Waiting for service '{self.local_set_helm_client.srv_name}' to become available..."
-                    #     )
 
                     request = ChangeState.Request()
                     request.state = self.default_state_list[proto_msg.state]
@@ -187,7 +182,7 @@ class MvpC2Reporter(Node):
                     proto_msg = self.dccl_obj.decode(data)
                     index = proto_msg.index
                     req = proto_msg.req
-                    print(f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {req}")
+                    print(f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {req}", flush = True)
                     if req == True:
                         self.roslauncher.start_launch(self.launch_packages[index], self.launch_file_names[index])
                     else:
@@ -198,7 +193,7 @@ class MvpC2Reporter(Node):
 
     ##publish dccl 
     def publish_dccl(self, proto):
-        dccl_msg = UInt8MultiArray()
+        dccl_msg = ByteMultiArray()
         dccl_msg.data = self.dccl_obj.encode(proto)
         dccl_msg.data = package_dccl(dccl_msg.data)
         self.ddcl_reporter_pub.publish(dccl_msg)
@@ -372,7 +367,7 @@ class MvpC2Reporter(Node):
             # print (i)                           
 
         if self.local_report_wpt_tx_flag is False:
-            # dccl_msg = UInt8MultiArray()
+            # dccl_msg = ByteMultiArray()
             # dccl_msg.data = self.dccl_obj.encode(proto)
             # dccl_msg.data = package_dccl(dccl_msg.data)
             # print(len(dccl_msg.data))
