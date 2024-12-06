@@ -118,6 +118,7 @@ class MvpC2Commander(Node):
         if flag == True:
             message_id = self.dccl_obj.id(data)
             # print(message_id, flush = True)
+            print(f'dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
             #odometry 
             if message_id == 3:
                 try:
@@ -129,8 +130,8 @@ class MvpC2Commander(Node):
                     nanosec = int((proto_msg.time - sec) * 1e9)  
                     msg.header.stamp.sec = sec
                     msg.header.stamp.nanosec = nanosec
-                    msg.header.frame_id = proto_msg.frame_id
-                    msg.child_frame_id = proto_msg.child_frame_id
+                    # msg.header.frame_id = proto_msg.frame_id
+                    # msg.child_frame_id = proto_msg.child_frame_id
                     #map position
                     if len(proto_msg.position) ==3:
                         msg.pose.pose.position.x = proto_msg.position[0]
@@ -169,11 +170,10 @@ class MvpC2Commander(Node):
                     nanosec = int((proto_msg.time - sec) * 1e9)  
                     msg.header.stamp.sec = sec
                     msg.header.stamp.nanosec = nanosec
-                    msg.header.frame_id = proto_msg.frame_id
-                    if len(proto_msg.lla) ==3:
-                        msg.pose.position.latitude = proto_msg.lla[0]
-                        msg.pose.position.longitude = proto_msg.lla[1]
-                        msg.pose.position.altitude = proto_msg.lla[2]
+                    # msg.header.frame_id = proto_msg.frame_id
+                    msg.pose.position.latitude = proto_msg.latitude*0.01
+                    msg.pose.position.longitude = proto_msg.longitude*0.01
+                    msg.pose.position.altitude = proto_msg.altitude
                     if len(proto_msg.orientation) ==4:
                         msg.pose.orientation.x = proto_msg.orientation[0]
                         msg.pose.orientation.y = proto_msg.orientation[1]
@@ -225,8 +225,8 @@ class MvpC2Commander(Node):
                     msg.header.frame_id = 'geopath'
                     msg.poses = [GeoPoseStamped() for _ in range(proto_msg.wpt_size)]
                     for i in range(proto_msg.wpt_size):
-                        msg.poses[i].pose.position.latitude = proto_msg.latitude[i]
-                        msg.poses[i].pose.position.longitude = proto_msg.longitude[i]
+                        msg.poses[i].pose.position.latitude = proto_msg.latitude[i]*0.01
+                        msg.poses[i].pose.position.longitude = proto_msg.longitude[i]*0.01
                         msg.poses[i].pose.position.altitude = proto_msg.altitude[i]
                     self.remote_wpt_report_pub.publish(msg)
 

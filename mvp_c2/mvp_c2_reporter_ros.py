@@ -121,6 +121,8 @@ class MvpC2Reporter(Node):
 
         if flag == True:
             message_id = self.dccl_obj.id(data)
+            print(f'dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
+
             # print(message_id, flush = True)
             #Joy
             if message_id == 1:
@@ -227,8 +229,8 @@ class MvpC2Reporter(Node):
         proto.pqr.extend([ msg.twist.twist.angular.x,
                            msg.twist.twist.angular.y, 
                            msg.twist.twist.angular.z ]) 
-        proto.frame_id = msg.header.frame_id
-        proto.child_frame_id = msg.child_frame_id
+        # proto.frame_id = msg.header.frame_id
+        # proto.child_frame_id = msg.child_frame_id
         
         if self.local_odom_tx_flag is False:
             self.publish_dccl(proto)
@@ -243,16 +245,16 @@ class MvpC2Reporter(Node):
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
-        proto.lla.extend([ msg.pose.position.latitude, 
-                            msg.pose.position.longitude,
-                            msg.pose.position.altitude ])
+        proto.latitude = msg.pose.position.latitude*100
+        proto.longitude = msg.pose.position.longitude*100
+        proto.altitude = msg.pose.position.altitude
         
         proto.orientation.extend([ msg.pose.orientation.x, 
                                 msg.pose.orientation.y,
                                 msg.pose.orientation.z,
                                 msg.pose.orientation.w ])
         
-        proto.frame_id = msg.header.frame_id
+        # proto.frame_id = msg.header.frame_id
     
         if self.local_geopose_tx_flag is False:
             self.publish_dccl(proto)
@@ -361,8 +363,8 @@ class MvpC2Reporter(Node):
         proto.wpt_size = len(response.wpt)
         # print(proto.wpt_size, flush=True)
         for i in range(proto.wpt_size):
-            proto.latitude.append(response.wpt[i].ll_wpt.latitude)
-            proto.longitude.append(response.wpt[i].ll_wpt.longitude)
+            proto.latitude.append(response.wpt[i].ll_wpt.latitude*100)
+            proto.longitude.append(response.wpt[i].ll_wpt.longitude*100)
             proto.altitude.append(response.wpt[i].ll_wpt.altitude)    
             # print (i)                           
 
