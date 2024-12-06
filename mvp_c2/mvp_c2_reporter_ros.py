@@ -4,7 +4,7 @@ import dccl
 import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from std_msgs.msg import UInt8MultiArray, Bool, ByteMultiArray
+from std_msgs.msg import Bool, ByteMultiArray
 from sensor_msgs.msg import Joy
 # from mvp_msgs.srv import SetString
 from mvp_msgs.srv import ChangeState, GetState, GetWaypoints
@@ -75,9 +75,9 @@ class MvpC2Reporter(Node):
         self.local_joy_pub = self.create_publisher(Joy, 'joy', 10)
 
         #DCCL byte array topic
-        self.ddcl_reporter_pub = self.create_publisher(UInt8MultiArray, 'mvp_c2/dccl_msg_tx', 10)
+        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/dccl_msg_tx', 10)
         
-        self.dccl_reporter_sub = self.create_subscription(UInt8MultiArray, 
+        self.dccl_reporter_sub = self.create_subscription(ByteMultiArray, 
                                                         'mvp_c2/dccl_msg_rx', 
                                                         self.dccl_rx_callback, 10)
 
@@ -115,9 +115,14 @@ class MvpC2Reporter(Node):
     ###parsing dccl
     def dccl_rx_callback(self,msg):
         # print("got dccl", flush=True)
-        flag, data = check_dccl(msg.data)
+        bdata = bytearray(ord(c) for c in msg.data)
+        flag, data = check_dccl(bdata)
+        # flag, data = check_dccl(msg.data)
+
         if flag == True:
             message_id = self.dccl_obj.id(data)
+            print(f'dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
+
             # print(message_id, flush = True)
             #Joy
             if message_id == 1:
@@ -142,12 +147,7 @@ class MvpC2Reporter(Node):
                 try: 
                     self.dccl_obj.load('SetController')
                     proto_msg = self.dccl_obj.decode(data)
-                    # print(proto_msg, flush = True)
                     self.local_set_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
-                    # self.get_logger().info(
-                    #         f"Waiting for service '{self.local_set_controller_client.srv_name}' to become available..."
-                    #     )
-
                     request = SetBool.Request()
                     request.data = proto_msg.status
 
@@ -166,9 +166,6 @@ class MvpC2Reporter(Node):
                     proto_msg = self.dccl_obj.decode(data)
                     # print(proto_msg, flush = True)
                     self.local_set_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
-                    # self.get_logger().info(
-                    #         f"Waiting for service '{self.local_set_helm_client.srv_name}' to become available..."
-                    #     )
 
                     request = ChangeState.Request()
                     request.state = self.default_state_list[proto_msg.state]
@@ -187,7 +184,7 @@ class MvpC2Reporter(Node):
                     proto_msg = self.dccl_obj.decode(data)
                     index = proto_msg.index
                     req = proto_msg.req
-                    print(f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {req}")
+                    print(f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {req}", flush = True)
                     if req == True:
                         self.roslauncher.start_launch(self.launch_packages[index], self.launch_file_names[index])
                     else:
@@ -198,7 +195,7 @@ class MvpC2Reporter(Node):
 
     ##publish dccl 
     def publish_dccl(self, proto):
-        dccl_msg = UInt8MultiArray()
+        dccl_msg = ByteMultiArray()
         dccl_msg.data = self.dccl_obj.encode(proto)
         dccl_msg.data = package_dccl(dccl_msg.data)
         self.ddcl_reporter_pub.publish(dccl_msg)
@@ -232,8 +229,8 @@ class MvpC2Reporter(Node):
         proto.pqr.extend([ msg.twist.twist.angular.x,
                            msg.twist.twist.angular.y, 
                            msg.twist.twist.angular.z ]) 
-        proto.frame_id = msg.header.frame_id
-        proto.child_frame_id = msg.child_frame_id
+        # proto.frame_id = msg.header.frame_id
+        # proto.child_frame_id = msg.child_frame_id
         
         if self.local_odom_tx_flag is False:
             self.publish_dccl(proto)
@@ -248,16 +245,16 @@ class MvpC2Reporter(Node):
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
-        proto.lla.extend([ msg.pose.position.latitude, 
-                            msg.pose.position.longitude,
-                            msg.pose.position.altitude ])
+        proto.latitude = msg.pose.position.latitude*100
+        proto.longitude = msg.pose.position.longitude*100
+        proto.altitude = msg.pose.position.altitude
         
         proto.orientation.extend([ msg.pose.orientation.x, 
                                 msg.pose.orientation.y,
                                 msg.pose.orientation.z,
                                 msg.pose.orientation.w ])
         
-        proto.frame_id = msg.header.frame_id
+        # proto.frame_id = msg.header.frame_id
     
         if self.local_geopose_tx_flag is False:
             self.publish_dccl(proto)
@@ -366,13 +363,13 @@ class MvpC2Reporter(Node):
         proto.wpt_size = len(response.wpt)
         # print(proto.wpt_size, flush=True)
         for i in range(proto.wpt_size):
-            proto.latitude.append(response.wpt[i].ll_wpt.latitude)
-            proto.longitude.append(response.wpt[i].ll_wpt.longitude)
+            proto.latitude.append(response.wpt[i].ll_wpt.latitude*100)
+            proto.longitude.append(response.wpt[i].ll_wpt.longitude*100)
             proto.altitude.append(response.wpt[i].ll_wpt.altitude)    
             # print (i)                           
 
         if self.local_report_wpt_tx_flag is False:
-            # dccl_msg = UInt8MultiArray()
+            # dccl_msg = ByteMultiArray()
             # dccl_msg.data = self.dccl_obj.encode(proto)
             # dccl_msg.data = package_dccl(dccl_msg.data)
             # print(len(dccl_msg.data))

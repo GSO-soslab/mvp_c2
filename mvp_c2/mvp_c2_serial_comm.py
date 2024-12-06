@@ -20,25 +20,22 @@ class MvpC2SerialRos(Node):
         print(f"port: {self.port}, baud: {self.baud} is open", flush=True)
 
         ##subscribe to dccl tx topic
-        self.dccl_tx_sub = self.create_subscription(UInt8MultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 10)
+        self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 10)
 
         ##publish to dccl rx topic
-        self.ddcl_rx_pub = self.create_publisher(UInt8MultiArray, 'dccl_msg_rx', 10)
+        self.ddcl_rx_pub = self.create_publisher(ByteMultiArray, 'dccl_msg_rx', 10)
         
         self.running = True
         threading.Thread(target=self.dccl_rx_callback, daemon=True).start()
-        print("Serial listener started")
+        print("Serial started")
 
     def dccl_tx_callback(self, msg):
-        # print("got dccl", flush =True)
-        # print(msg.data, flush = True)
-        self.ser.send(msg.data)
+        data = bytearray(ord(c) for c in msg.data)  # if msg.data is a list of characters
+        # print(f'send:{len(data)}', flush=True)
+        self.ser.send(data)
 
     def dccl_rx_callback(self):
         while self.running:
-            # try:
-            # data = bytearray([])
-            # data = self.ser.read()
             data = bytearray([])
             counter = 1
             while True:
@@ -47,11 +44,12 @@ class MvpC2SerialRos(Node):
                     # print(temp_data)
                     data = data + temp_data
                     counter = counter + 1
-                    # print(f'*={data[-4]} and length = {len(temp_data)}', flush=True)
-                    if len(data) >= 3 and data[-4] == 42:
-                        msg = UInt8MultiArray()
+
+                    if len(data) >= 3 and data[-4] == 42: #the four last chars are *AB\n
+                        msg = ByteMultiArray()
                         msg.data = data
-                        print(msg.data)
+                        # print(msg.data)
+                        # print(f'received:{len(msg.data)}', flush=True)
                         self.ddcl_rx_pub.publish(msg)
                         break 
                     if counter == 5:

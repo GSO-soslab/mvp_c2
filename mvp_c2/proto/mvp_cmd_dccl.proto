@@ -6,7 +6,7 @@ message Joy{
     option (dccl.msg) = { codec_version: 4
                           id: 1
                           max_bytes: 32 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     repeated double axes = 4 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 2 max_repeat: 6 } ];
@@ -17,7 +17,7 @@ message PWM{
     option (dccl.msg) = { codec_version: 4
                           id: 2
                           max_bytes: 32 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 index = 4 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
@@ -28,27 +28,31 @@ message Odometry{
     option (dccl.msg) = { codec_version: 4
         id: 3
         max_bytes: 64 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];    
     repeated double position = 4 [ (dccl.field) = {min: -10000.0 max: 10000.0 precision: 2 max_repeat: 3 } ];
-    repeated double orientation = 5 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 2 max_repeat: 4 } ];
-    repeated double uvw = 6 [ (dccl.field) = {min: -10.0 max: 10.0 precision: 2 max_repeat: 3 } ];
-    repeated double pqr = 7 [ (dccl.field) = {min: -10.0 max: 10.0 precision: 2 max_repeat: 3 } ];
-    optional string frame_id = 8 [ (dccl.field) = {max_length: 15 } ];
-    optional string child_frame_id = 9 [ (dccl.field) = {max_length: 15 } ];
+    repeated double orientation = 5 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 3 max_repeat: 4 } ];
+    repeated double uvw = 6 [ (dccl.field) = {min: -5.0 max: 5.0 precision: 2 max_repeat: 3 } ];
+    repeated double pqr = 7 [ (dccl.field) = {min: -5.0 max: 5.0 precision: 2 max_repeat: 3 } ];
+    // optional string frame_id = 8 [ (dccl.field) = {max_length: 15 } ];
+    // optional string child_frame_id = 9 [ (dccl.field) = {max_length: 15 } ];
 }
 
 message GeoPose{
     option (dccl.msg) = { codec_version: 4
         id: 4
         max_bytes: 64 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];    
-    repeated double lla = 4 [ (dccl.field) = {min:  -200.0 max: 200.0 precision: 7 max_repeat: 3 } ];
-    repeated double orientation = 5 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 5 max_repeat: 4 } ];
-    optional string frame_id = 8 [ (dccl.field) = {max_length: 15 } ];
+    // repeated double lla = 4 [ (dccl.field) = {min:  -200.0 max: 200.0 precision: 8 max_repeat: 3 } ];
+    //lat lon are in deci degrees now
+    required double latitude = 4 [ (dccl.field) = {min: -9000.0 max: 9000.0 precision: 6} ];
+    required double longitude = 5 [ (dccl.field) = {min: -18000.0 max: 18000.0 precision: 6} ];
+    required double altitude = 6 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 2} ];
+    repeated double orientation = 7 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 3 max_repeat: 4 } ];
+    // optional string frame_id = 8 [ (dccl.field) = {max_length: 15 } ];
 }
 
 
@@ -56,7 +60,7 @@ message SetPowerPort{
     option (dccl.msg) = { codec_version: 4
         id: 20
         max_bytes: 32 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];    
     required int32 index = 4 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
@@ -67,7 +71,7 @@ message ReportPowerPort{
     option (dccl.msg) = { codec_version: 4
                           id: 21
                           max_bytes: 32 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];    
     repeated bool state =4 [ (dccl.field) = {min: -1 max: 1 precision: 0 max_repeat: 10 } ];
@@ -79,7 +83,7 @@ message SetController{
     option (dccl.msg) = { codec_version: 4
                           id: 22
                           max_bytes: 32 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];    
     required bool status = 4 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 0} ];
@@ -90,7 +94,7 @@ message ReportController{
     option (dccl.msg) = { codec_version: 4
                           id: 23
                           max_bytes: 32 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];    
     required bool status = 4 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 0} ];
@@ -101,7 +105,7 @@ message SetHelm{
     option (dccl.msg) = { codec_version: 4
                           id: 30
                           max_bytes: 32 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];    
     // required string state = 4 [ (dccl.field) = {max_length: 9 } ];
@@ -113,7 +117,7 @@ message ReportHelm{
     option (dccl.msg) = { codec_version: 4
                           id: 31
                           max_bytes: 100 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];    
     // required string state = 4 [ (dccl.field) = {max_length: 40} ];
@@ -128,13 +132,14 @@ message SetWpt{
     option (dccl.msg) = { codec_version: 4
                           id: 32
                           max_bytes: 150 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 1} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 wpt_size = 4 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
-    repeated double latitude = 5 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 7 max_repeat: 10 } ];
-    repeated double longitude = 6 [ (dccl.field) = {min: -200.0 max: 200.0 precision: 7 max_repeat: 10 } ];
-    repeated double altitude = 7 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 7 max_repeat: 10 } ];
+    //lat lon are in deci degrees now
+    repeated double latitude = 5 [ (dccl.field) = {min: -9000.0 max: 9000.0 precision: 6 max_repeat: 10 } ];
+    repeated double longitude = 6 [ (dccl.field) = {min: -18000.0 max: 18000.0 precision: 6 max_repeat: 10 } ];
+    repeated double altitude = 7 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 2 max_repeat: 10 } ];
 }
 
 //report current waypoint
@@ -142,13 +147,14 @@ message ReportWpt{
     option (dccl.msg) = { codec_version: 4
                           id: 33
                           max_bytes: 200 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 1} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];    
     required int32 wpt_size = 4 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
-    repeated double latitude = 5 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 7 max_repeat: 10 } ];
-    repeated double longitude = 6 [ (dccl.field) = {min: -200.0 max: 200.0 precision: 7 max_repeat: 10 } ];
-    repeated double altitude = 7 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 7 max_repeat: 10 } ];
+    //lat lon are in deci degrees now
+    repeated double latitude = 5 [ (dccl.field) = {min: -9000.0 max: 9000.0 precision: 6 max_repeat: 10 } ];
+    repeated double longitude = 6 [ (dccl.field) = {min: -18000.0 max: 18000.0 precision: 6 max_repeat: 10 } ];
+    repeated double altitude = 7 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 2 max_repeat: 10 } ];
 }
 
 
@@ -157,7 +163,7 @@ message RosLaunch{
     option (dccl.msg) = { codec_version: 4
                           id: 40
                           max_bytes: 32 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
     required int32 index = 4 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
@@ -168,7 +174,7 @@ message ReportRosLaunch{
     option (dccl.msg) = { codec_version: 4
                           id: 41
                           max_bytes: 32 };
-    required double time = 1 [ (dccl.field) = {min: 1700000000 max: 1800000000 precision: 3} ];
+    required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
     repeated bool state =4 [ (dccl.field) = {min: -1 max: 1 precision: 0 max_repeat: 10 } ];
