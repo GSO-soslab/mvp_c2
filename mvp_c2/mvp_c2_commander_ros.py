@@ -48,6 +48,9 @@ class MvpC2Commander(Node):
         self.declare_parameter('launch_files', [''])
         self.launch_file_names = self.get_parameter('launch_files').get_parameter_value().string_array_value
 
+        self.declare_parameter('gpio_devices', [])
+        self.gpio_devices = self.get_parameter('gpio_devices').get_parameter_value().string_array_value
+
         # mvp_active meaning the local machine has mvp running so it can transfer its mvp related 
         ##publish information parsed from dccl to ros topic
         topic_prefix = 'remote/id_' + str(self.remote_id)
@@ -76,6 +79,19 @@ class MvpC2Commander(Node):
 
         else:
             print("Launch packages and name entries doesn't match", flush = True)
+
+
+        ##service for gpio
+        # print(len(self.gpio_devices))
+        # if len(self.gpio_devices) > 0:
+        for index in range(len(self.gpio_devices)):
+            srv_name = topic_prefix + '/gpio/' + self.gpio_devices[index]
+            self.remote_set_state_srv = self.create_service(
+                SetBool,
+                srv_name,
+                lambda req, resp, idx=index: self.set_gpio_callback(req, resp, idx)
+            )
+
 
         #DCCL byte array topic
         self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/dccl_msg_tx', 10)
@@ -304,21 +320,24 @@ class MvpC2Commander(Node):
     #set waypoints
     def remote_set_waypoints_callback(self, request, response):
         self.dccl_obj.load('SetWpt')
+        # print(request, flush =True)
+        # print(len(request.wpt), flush =True)
         proto = mvp_cmd_dccl_pb2.SetWpt()
         proto.time = round(time.time(), 3)
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
         proto.wpt_size = len(request.wpt)
-        if len(request.wpt>0):
+        if proto.wpt_size > 0:
             for i in range(proto.wpt_size):
                 proto.latitude.append(request.wpt[i].ll_wpt.latitude*100)
                 proto.longitude.append(request.wpt[i].ll_wpt.longitude*100)
                 proto.altitude.append(request.wpt[i].ll_wpt.altitude) 
 
             if self.remote_set_wpt_tx_flag is False:
+                print(proto, flush=True)
                 self.publish_dccl(proto)
                 self.remote_set_wpt_tx_flag = True
-                
+
                 response.success = True
                 return response
             
@@ -327,8 +346,6 @@ class MvpC2Commander(Node):
             
         response.success = False
         return response
-
-
 
     #ros launch request callback
     def roslaunch_srv_callback(self, request, response, index):
@@ -350,6 +367,9 @@ class MvpC2Commander(Node):
             self.publish_dccl(proto)
             self.remote_set_ros_launch_tx_flag = True
         return response   
+
+    # def set_gpio_callback(self, request, response, index):
+    #make dccl
 
 def main(args=None):
     rclpy.init(args=args)
