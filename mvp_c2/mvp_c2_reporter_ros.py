@@ -41,11 +41,6 @@ class MvpC2Reporter(Node):
         self.local_mvp_active = self.declare_parameter('local_mvp_active', True).value
         self.ser_wait_time = self.declare_parameter('service_wait_time', 0.2).value
 
-        
-        # self.default_state_list = ['start', 'kill', 'survey', 'profiling', 'teleop']
-        # self.launch_packages = ['mvp2_test_robot_bringup']
-        # self.launch_file_names = ['bringup_simulation']
-
         self.declare_parameter('helm_state_list', [''])
         self.default_state_list = self.get_parameter('helm_state_list').get_parameter_value().string_array_value
         
@@ -102,7 +97,7 @@ class MvpC2Reporter(Node):
         self.timer2 = self.create_timer(self.dccl_tx_interval, self.report_controller_state_callback)
         self.timer3 = self.create_timer(self.dccl_tx_interval, self.report_helm_state_callback)
         self.timer4 = self.create_timer(self.dccl_tx_interval, self.report_wpt_callback)
-        # self.timer4 = self.create_timer(self.dccl_tx_interval, self.report_roslaunch_callback)
+        self.timer4 = self.create_timer(self.dccl_tx_interval, self.report_roslaunch_callback)
 
     def reset_dccl_tx_flag(self):
         self.local_odom_tx_flag = False
@@ -110,7 +105,7 @@ class MvpC2Reporter(Node):
         self.local_report_controller_state_tx_flag = False
         self.local_report_helm_state_tx_flag = False
         self.local_report_wpt_tx_flag = False
-
+        self.local_report_roslaunch_tx_flag = False
 
     #######################################################
     ############DCCL parsing###############################
@@ -282,6 +277,27 @@ class MvpC2Reporter(Node):
         if self.local_geopose_tx_flag is False:
             self.publish_dccl(proto)
             self.local_geopose_tx_flag = True
+
+    def report_roslaunch_callback(self):
+        if(self.local_report_roslaunch_tx_flag == False):
+
+            running_launches = self.roslauncher.list_running_launches()
+            # data = []
+            self.dccl_obj.load('ReportRosLaunch')
+            proto = mvp_cmd_dccl_pb2.ReportRosLaunch()
+            proto.time =round(time.time(), 3)
+            proto.local_id = self.local_id
+            proto.remote_id = self.remote_id
+
+            for index, name in enumerate(self.launch_file_names):
+                key = (self.launch_packages[index], name)
+                if key in running_launches:
+                    proto.state.append(1)
+                    # data.append(True)
+                else:
+                    proto.state.append(0)
+            self.publish_dccl(proto)
+            self.local_report_roslaunch_tx_flag = True
 
     #report controller backback
     def report_controller_state_callback(self):

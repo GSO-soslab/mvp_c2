@@ -177,7 +177,7 @@ message ReportRosLaunch{
     required double time = 1 [ (dccl.field) = {min: 1733000000 max: 1800000000 precision: 3} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
-    repeated bool state =4 [ (dccl.field) = {min: -1 max: 1 precision: 0 max_repeat: 10 } ];
+    repeated int32 state =4 [ (dccl.field) = {min: -1 max: 1 precision: 0 max_repeat: 10 } ];
 }
 
 

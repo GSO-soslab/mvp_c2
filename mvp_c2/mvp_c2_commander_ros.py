@@ -4,7 +4,7 @@ import dccl
 import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Bool, ByteMultiArray
+from std_msgs.msg import Bool, ByteMultiArray, Int16MultiArray
 from sensor_msgs.msg import Joy
 from geographic_msgs.msg import GeoPath
 from mvp_msgs.srv import SetString, SendWaypoints
@@ -59,7 +59,7 @@ class MvpC2Commander(Node):
         self.remote_controller_state_pub = self.create_publisher(Bool, topic_prefix + '/controller_state', 10)
         self.remote_helm_state_pub = self.create_publisher(HelmState, topic_prefix + '/helm/state', 10)
         self.remote_wpt_report_pub = self.create_publisher(GeoPath, topic_prefix + '/survey/geopath', 10)
-
+        self.remote_roslaunch_report_pub = self.create_publisher(Int16MultiArray, topic_prefix +'roslaunch_state', 10)
         self.local_joy_sub = self.create_subscription(Joy, topic_prefix + '/joy', self.joy_callback, 10)
 
         ##service for access remote controllers
@@ -110,7 +110,6 @@ class MvpC2Commander(Node):
 
         ##timer for resetting the dccl tx flag
         self.local_joy_tx_flag = False
-
         self.remote_set_controller_tx_flag = False
         self.remote_set_helm_state_tx_flag = False
         self.remote_set_ros_launch_tx_flag = False
@@ -250,7 +249,20 @@ class MvpC2Commander(Node):
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
-    
+
+            # report roslaunch status
+            if message_id == 41:
+                try:
+                    self.dccl_obj.load('ReportRosLaunch')
+                    proto_msg = self.dccl_obj.decode(data)
+                    msg = Int16MultiArray()
+                    msg.data = proto_msg.state
+                    self.remote_roslaunch_report_pub.publish(msg)
+
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
     ##publish dccl 
     def publish_dccl(self, proto):
         dccl_msg = ByteMultiArray()
