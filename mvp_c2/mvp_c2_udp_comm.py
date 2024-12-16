@@ -3,7 +3,7 @@ from rclpy.node import Node
 import threading
 
 from udp_interface import UDPInterface
-from std_msgs.msg import UInt8MultiArray
+from std_msgs.msg import ByteMultiArray
 
 
 class MvpC2UdpRos(Node):
@@ -22,31 +22,33 @@ class MvpC2UdpRos(Node):
                                     self.client_ip, self.client_port)
 
         ##subscribe to dccl tx topic
-        self.dccl_tx_sub = self.create_subscription(UInt8MultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 10)
+        self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 10)
 
         ##publish to dccl rx topic
-        self.ddcl_rx_pub = self.create_publisher(UInt8MultiArray, 'dccl_msg_rx', 10)
+        self.ddcl_rx_pub = self.create_publisher(ByteMultiArray, 'dccl_msg_rx', 10)
         
         self.running = True
         threading.Thread(target=self.dccl_rx_callback, daemon=True).start()
-        print("UDP listener started.")
+        print("UDP listener started.", flush = True)
 
     def dccl_tx_callback(self, msg):
+        data = bytearray(ord(c) for c in msg.data)  # if msg.data is a list of characters
         # print("got dccl", flush =True)
         # print(msg.data, flush = True)
-        self.udp_obj.send(msg.data)
+        self.udp_obj.send(data)
 
     def dccl_rx_callback(self):
         while self.running:
+            data = bytearray([])
             try:
                 data = self.udp_obj.read()
                 if(data is not None):
-                    msg = UInt8MultiArray()
+                    msg = ByteMultiArray()
                     msg.data = data
                     # print("publishing", flush = True)
                     self.ddcl_rx_pub.publish(msg)
             except Exception as e:
-                print(f"Error in dccl_rx_callback: {e}")
+                print(f"Error in dccl_rx_callback: {e}", flush = True)
                 break
 
     def close_udp(self):

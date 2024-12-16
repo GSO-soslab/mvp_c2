@@ -11,18 +11,33 @@ from ament_index_python.packages import get_package_share_directory
 def generate_launch_description():
 
     comm_setting_file = os.path.join(get_package_share_directory('mvp_c2'), 'config', 'serial_setting.yaml') 
+    udp_comm_setting_file = os.path.join(get_package_share_directory('mvp_c2'), 'config', 'udp_setting.yaml') 
     commander_setting_file = os.path.join(get_package_share_directory('mvp_c2'), 'config', 'commander_setting.yaml') 
 
     return LaunchDescription([
         
+        # Node(
+        #     package = 'mvp_c2',
+        #     namespace = 'commander',
+        #     executable='mvp_c2_serial_comm',
+        #     name = 'commander_c2_serial_comm',
+        #     output='screen',
+        #     prefix=['stdbuf -o L'],
+        #     parameters=[comm_setting_file],
+        #     remappings=[
+        #         ('dccl_msg_tx', 'mvp_c2/dccl_msg_tx'),
+        #         ('dccl_msg_rx', 'mvp_c2/dccl_msg_rx'),
+        #     ]
+        # ),
+
         Node(
             package = 'mvp_c2',
             namespace = 'commander',
-            executable='mvp_c2_serial_comm',
-            name = 'commander_c2_serial_comm',
+            executable='mvp_c2_udp_comm',
+            name = 'commander_c2_udp_comm',
             output='screen',
             prefix=['stdbuf -o L'],
-            parameters=[comm_setting_file],
+            parameters=[udp_comm_setting_file],
             remappings=[
                 ('dccl_msg_tx', 'mvp_c2/dccl_msg_tx'),
                 ('dccl_msg_rx', 'mvp_c2/dccl_msg_rx'),

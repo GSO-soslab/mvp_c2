@@ -16,14 +16,15 @@ class UDPInterface:
         if self.type == 'server':
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.server_socket.bind(self.server_addr)
-            print(f"UDP server is up on {self.server_ip}:{self.server_port}")
-            print(f"waiting for {self.client_ip}: {self.client_port}")
+            print(f"UDP server is up on {self.server_ip}:{self.server_port}", flush=True)
+            print(f"waiting for {self.client_ip}: {self.client_port}", flush=True)
+
 
         if self.type == 'client':
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.client_socket.bind(self.client_addr)
-            print(f"UDP client is setup on {self.client_ip}:{self.client_port}")
-            print(f"will connect to server: {self.server_ip}:{self.server_port}")
+            print(f"UDP client is setup on {self.client_ip}:{self.client_port}", flush=True)
+            print(f"will connect to server: {self.server_ip}:{self.server_port}", flush=True)
 
     def send(self, data):  
         if self.type == 'server':
@@ -43,6 +44,7 @@ class UDPInterface:
                 if addr[0] == self.client_addr[0]:
                     return data
                 else:
+                    print("No UDP data", flush =True)
                     return None
             
             elif self.type == 'client':
@@ -53,6 +55,7 @@ class UDPInterface:
                 if addr[0] == self.server_addr[0]:
                     return data
                 else:
+                    print("No UDP data", flush =True)
                     return None
         except socket.timeout:
             print("Socket timed out!", flush = True)
