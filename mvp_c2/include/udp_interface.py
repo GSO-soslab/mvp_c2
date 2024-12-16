@@ -28,11 +28,10 @@ class UDPInterface:
 
     def send(self, data):  
         if self.type == 'server':
-             self.server_socket.sendto(data, self.client_addr)
+            self.server_socket.sendto(data, self.client_addr)
             
         elif self.type == 'client':
             self.client_socket.sendto(data, self.server_addr)
-
 
     def read(self):
         try:
@@ -57,10 +56,9 @@ class UDPInterface:
                 else:
                     print("No UDP data", flush =True)
                     return None
-        except socket.timeout:
-            print("Socket timed out!", flush = True)
+        except Exception as e:
+            print(f"UDP Error: {e}", flush = True)
             return None  # Return None or handle timeout case as needed
-        
 
     def close(self):
         print("closing the socket", flush = True)

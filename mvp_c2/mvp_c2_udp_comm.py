@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 import threading
+import time
 
 from udp_interface import UDPInterface
 from std_msgs.msg import ByteMultiArray
@@ -18,9 +19,19 @@ class MvpC2UdpRos(Node):
         self.rx_timer = self.declare_parameter('rx_timer', 0.1).value
 
         print (self.client_port, flush = True)
-        self.udp_obj = UDPInterface(self.udp_type, self.server_ip, self.server_port, 
-                                    self.client_ip, self.client_port)
 
+        while True:
+            try:
+                print('Setting up UDP', flush= True)
+                time.sleep(1)
+                self.udp_obj = UDPInterface(self.udp_type, self.server_ip, self.server_port, 
+                                            self.client_ip, self.client_port)
+                
+                break
+            except Exception as e:
+                print(f"Error in UDP setup: {e}", flush = True)
+
+        print("UDP is good.", flush = True)
         ##subscribe to dccl tx topic
         self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'dccl_msg_tx', self.dccl_tx_callback, 10)
 
@@ -29,13 +40,16 @@ class MvpC2UdpRos(Node):
         
         self.running = True
         threading.Thread(target=self.dccl_rx_callback, daemon=True).start()
-        print("UDP listener started.", flush = True)
+            
+
+           
 
     def dccl_tx_callback(self, msg):
         data = bytearray(ord(c) for c in msg.data)  # if msg.data is a list of characters
-        # print("got dccl", flush =True)
-        # print(msg.data, flush = True)
-        self.udp_obj.send(data)
+        try:
+            self.udp_obj.send(data)
+        except Exception as e:
+            print(f"Error in dccl_tx_callback: {e}", flush = True)
 
     def dccl_rx_callback(self):
         while self.running:
