@@ -137,7 +137,7 @@ class MvpC2Reporter(Node):
 
         if flag == True:
             message_id = self.dccl_obj.id(data)
-            print(f'dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
+            print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
 
             # print(message_id, flush = True)
             #Joy
