@@ -357,7 +357,7 @@ class MvpC2Reporter(Node):
             parts = line.split('=')
             if len(parts) == 2:  # Ensure there are exactly two parts
                 name, status = parts
-                proto.state.append(status)
+                proto.state.append(int(status))
                 
         self.publish_dccl(proto)
         self.local_report_gpio_tx_flag = True
