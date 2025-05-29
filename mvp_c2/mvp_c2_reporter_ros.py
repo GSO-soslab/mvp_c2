@@ -218,7 +218,7 @@ class MvpC2Reporter(Node):
                     request = SetBool.Request()
                     request.data = proto_msg.state
                     future = self.local_set_gpio_clients[index].call_async(request)
-                    print(f"{self.gpio_devices[index]} Power set to {req}", flush =True)
+                    print(f"{self.gpio_devices[index]} Power set to {request.data }", flush =True)
                     
                 except Exception as e:
                     # Print the exception message for debugging
