@@ -60,6 +60,7 @@ class MvpC2Commander(Node):
         self.remote_helm_state_pub = self.create_publisher(HelmState, topic_prefix + '/helm/state', 10)
         self.remote_wpt_report_pub = self.create_publisher(GeoPath, topic_prefix + '/survey/geopath', 10)
         self.remote_roslaunch_report_pub = self.create_publisher(Int16MultiArray, topic_prefix +'roslaunch_state', 10)
+        self.remote_gpio_power_report_pub = self.create_publisher(Int16MultiArray, topic_prefix+'gpio_power_state',10)
         self.local_joy_sub = self.create_subscription(Joy, topic_prefix + '/joy', self.joy_callback, 10)
 
         ##service for access remote controllers
@@ -85,7 +86,7 @@ class MvpC2Commander(Node):
         # print(len(self.gpio_devices))
         # if len(self.gpio_devices) > 0:
         for index in range(len(self.gpio_devices)):
-            srv_name = topic_prefix + '/gpio/' + self.gpio_devices[index]
+            srv_name = topic_prefix + '/gpio_manager/set_power/' + self.gpio_devices[index]
             self.remote_set_state_srv = self.create_service(
                 SetBool,
                 srv_name,
@@ -114,6 +115,8 @@ class MvpC2Commander(Node):
         self.remote_set_helm_state_tx_flag = False
         self.remote_set_ros_launch_tx_flag = False
         self.remote_set_wpt_tx_flag = False
+        self.remote_set_power_tx_flag = False
+
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
 
     def reset_dccl_tx_flag(self):
@@ -122,6 +125,7 @@ class MvpC2Commander(Node):
         self.remote_set_helm_state_tx_flag = False
         self.remote_set_ros_launch_tx_flag = False
         self.remote_set_wpt_tx_flag = False
+        self.remote_set_power_tx_flag = False
 
     #######################################################
     ############DCCL parsing###############################
@@ -263,6 +267,17 @@ class MvpC2Commander(Node):
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
 
+            #report set power status
+            if message_id == 21:
+                try:
+                    self.dccl_obj.load('ReportPowerPort')
+                    proto_msg = self.dccl_obj.decode(data)
+                    msg = Int16MultiArray()
+                    msg.data = proto_msg.state
+                    self.remote_gpio_power_report_pub.publish(msg)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
     ##publish dccl 
     def publish_dccl(self, proto):
         dccl_msg = ByteMultiArray()
@@ -380,7 +395,25 @@ class MvpC2Commander(Node):
             self.remote_set_ros_launch_tx_flag = True
         return response   
 
-    # def set_gpio_callback(self, request, response, index):
+    def set_gpio_callback(self, request, response, index):
+        self.dccl_obj.load('SetPowerPort')
+        proto = mvp_cmd_dccl_pb2.SetPowerPort()
+        proto.time=round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.index = index
+        proto.state = request.data
+        msg = f"{self.gpio_devices[index]} Power set to {request.data}"
+        # Process request and prepare response
+        response.success = True
+        response.message = msg
+
+        if self.remote_set_power_tx_flag is False:
+            self.publish_dccl(proto)
+            self.remote_set_power_tx_flag = True
+        return response   
+
+
     #make dccl
 
 def main(args=None):

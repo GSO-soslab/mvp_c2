@@ -50,6 +50,9 @@ class MvpC2Reporter(Node):
         self.declare_parameter('launch_files', [''])
         self.launch_file_names = self.get_parameter('launch_files').get_parameter_value().string_array_value
 
+        self.declare_parameter('gpio_devices', [])
+        self.gpio_devices = self.get_parameter('gpio_devices').get_parameter_value().string_array_value
+
         ##roslauncher
         self.roslauncher = ROSLaunchManager()
 
@@ -67,6 +70,14 @@ class MvpC2Reporter(Node):
         self.local_report_helm_client = self.create_client(GetState, 'mvp_helm/get_state')
         self.local_report_wpt_client = self.create_client(GetWaypoints, 'mvp_helm/path')
         self.local_set_wpt_client = self.create_client(SendWaypoints, 'mvp_helm/set_waypoints')
+        self.local_report_gpio_client = self.create_client(Trigger, 'gpio_manager/get_power_status')
+        self.local_set_gpio_clients = {}
+        for index in range(len(self.gpio_devices)):
+            srv_name = 'gpio_manager/set_power/' + self.gpio_devices[index]
+            client = self.create_client(SetBool,srv_name)
+            self.local_set_gpio_clients[index] = client
+            self.get_logger().info(f"Created client for {srv_name}")
+
         #joy stick publisher from base station
         self.local_joy_pub = self.create_publisher(Joy, 'joy', 10)
 
@@ -92,12 +103,16 @@ class MvpC2Reporter(Node):
         self.local_report_helm_state_tx_flag = False
         self.local_report_wpt_tx_flag = False
         self.local_report_roslaunch_tx_flag = False
+        self.local_report_gpio_tx_flag = False
+
 
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
         self.timer2 = self.create_timer(self.dccl_tx_interval, self.report_controller_state_callback)
         self.timer3 = self.create_timer(self.dccl_tx_interval, self.report_helm_state_callback)
         self.timer4 = self.create_timer(self.dccl_tx_interval, self.report_wpt_callback)
         self.timer4 = self.create_timer(self.dccl_tx_interval, self.report_roslaunch_callback)
+        self.timer5 = self.create_timer(self.dccl_tx_interval, self.report_gpio_callback)
+
 
     def reset_dccl_tx_flag(self):
         self.local_odom_tx_flag = False
@@ -106,6 +121,8 @@ class MvpC2Reporter(Node):
         self.local_report_helm_state_tx_flag = False
         self.local_report_wpt_tx_flag = False
         self.local_report_roslaunch_tx_flag = False
+        self.local_report_gpio_tx_flag = False
+
 
     #######################################################
     ############DCCL parsing###############################
@@ -187,6 +204,21 @@ class MvpC2Reporter(Node):
                         self.roslauncher.start_launch(self.launch_packages[index], self.launch_file_names[index])
                     else:
                         self.roslauncher.stop_launch(self.launch_packages[index], self.launch_file_names[index])
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
+            #set power request
+            if message_id == 20:
+                try:
+                    self.dccl_obj.load('SetPowerPOrt')
+                    proto_msg = self.dccl_obj.decode(data)
+                    index = proto_msg.index
+                    request = SetBool.Request()
+                    request.data = proto_msg.state
+                    future = self.local_set_gpio_clients[index].call_async(request)
+                    print(f"{self.gpio_devices[index]} Power set to {req}", flush =True)
+                    
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
@@ -298,6 +330,38 @@ class MvpC2Reporter(Node):
                     proto.state.append(0)
             self.publish_dccl(proto)
             self.local_report_roslaunch_tx_flag = True
+    
+    ##report GPIO power
+    def report_gpio_callback(self):
+        if(self.local_report_gpio_tx_flag == False):
+            flag = self.local_report_gpio_client.wait_for_service(timeout_sec=self.ser_wait_time)
+            if flag:
+                request =Trigger.Request()
+                future = self.local_report_gpio_client.call_async(request)
+                future.add_done_callback(self.report_gpio_state_callback_done)
+            # data = []
+            else:
+                print(f'Service: [{self.local_report_gpio_client.srv_name}] Timeout', flush=True)
+
+    def report_gpio_state_callback_done(self, future):
+        response = future.result()
+        self.dccl_obj.load('ReportPowerPort')
+        proto = mvp_cmd_dccl_pb2.ReportPowerPort()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+
+        power_list = response.message.splitlines()
+        for count, line in enumerate(power_list):
+            parts = line.split('=')
+            if len(parts) == 2:  # Ensure there are exactly two parts
+                name, status = parts
+                if status.lower() == "true":
+                    proto.state.append(1)
+                else:
+                    proto.state.append(0)
+        self.publish_dccl(proto)
+        self.local_report_gpio_tx_flag = True
 
     #report controller backback
     def report_controller_state_callback(self):
