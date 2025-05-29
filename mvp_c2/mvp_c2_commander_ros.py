@@ -62,8 +62,8 @@ class MvpC2Commander(Node):
         self.remote_controller_state_pub = self.create_publisher(Bool, topic_prefix + '/controller_state', 10)
         self.remote_helm_state_pub = self.create_publisher(HelmState, topic_prefix + '/helm/state', 10)
         self.remote_wpt_report_pub = self.create_publisher(GeoPath, topic_prefix + '/survey/geopath', 10)
-        self.remote_roslaunch_report_pub = self.create_publisher(Int16MultiArray, topic_prefix +'roslaunch_state', 10)
-        self.remote_gpio_power_report_pub = self.create_publisher(Int16MultiArray, topic_prefix+'gpio_power_state',10)
+        self.remote_roslaunch_report_pub = self.create_publisher(Int16MultiArray, topic_prefix +'/roslaunch_state', 10)
+        self.remote_gpio_power_report_pub = self.create_publisher(Int16MultiArray, topic_prefix+'/gpio_power_state',10)
 
         self.local_joy_sub = self.create_subscription(Joy, topic_prefix + '/joy', self.joy_callback, 10)
 

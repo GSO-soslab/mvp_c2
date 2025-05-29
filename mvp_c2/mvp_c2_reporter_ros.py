@@ -212,7 +212,7 @@ class MvpC2Reporter(Node):
             #set power request
             if message_id == 20:
                 try:
-                    self.dccl_obj.load('SetPowerPOrt')
+                    self.dccl_obj.load('SetPowerPort')
                     proto_msg = self.dccl_obj.decode(data)
                     index = proto_msg.index
                     request = SetBool.Request()
