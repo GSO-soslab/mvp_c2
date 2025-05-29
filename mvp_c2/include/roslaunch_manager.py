@@ -21,8 +21,10 @@ class ROSLaunchManager:
                 del env['ROS_NAMESPACE']
 
             process = subprocess.Popen(['ros2', 'launch', package_name, launch_file +'.launch.py'], env=env)
-            self.node_processes[key] = process
-            print(f"Started launch file {launch_file} for package {package_name}.")
+            time.sleep(1)
+            if process.poll() is None:
+                self.node_processes[key] = process
+                print(f"Started launch file {launch_file} for package {package_name}.")
 
     def stop_launch(self, package_name, launch_file):
         with self.lock:
@@ -38,6 +40,9 @@ class ROSLaunchManager:
                     print(f"Stopped launch file {launch_file} for package {package_name}.", flush=True)
                 except psutil.NoSuchProcess:
                     print(f"Process for launch file {launch_file} not found.", flush=True)
+
+                if not self.node_processes:  # All launches stopped
+                    print("All launch files stopped — shutting down output threads.")
             else:
                 print(f"Launch file {launch_file} for package {package_name} is not running.", flush=True)
 
