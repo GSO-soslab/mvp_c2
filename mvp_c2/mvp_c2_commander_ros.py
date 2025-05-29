@@ -48,8 +48,11 @@ class MvpC2Commander(Node):
         self.declare_parameter('launch_files', [''])
         self.launch_file_names = self.get_parameter('launch_files').get_parameter_value().string_array_value
 
-        self.declare_parameter('gpio_devices', [])
+        print("load gpio device", flush = True)
+        self.declare_parameter('gpio_devices', [''])
         self.gpio_devices = self.get_parameter('gpio_devices').get_parameter_value().string_array_value
+
+        # print(self.gpio_devices, flush=True)
 
         # mvp_active meaning the local machine has mvp running so it can transfer its mvp related 
         ##publish information parsed from dccl to ros topic

@@ -50,7 +50,7 @@ class MvpC2Reporter(Node):
         self.declare_parameter('launch_files', [''])
         self.launch_file_names = self.get_parameter('launch_files').get_parameter_value().string_array_value
 
-        self.declare_parameter('gpio_devices', [])
+        self.declare_parameter('gpio_devices', [''])
         self.gpio_devices = self.get_parameter('gpio_devices').get_parameter_value().string_array_value
 
         ##roslauncher
@@ -72,6 +72,7 @@ class MvpC2Reporter(Node):
         self.local_set_wpt_client = self.create_client(SendWaypoints, 'mvp_helm/set_waypoints')
         self.local_report_gpio_client = self.create_client(Trigger, 'gpio_manager/get_power_status')
         self.local_set_gpio_clients = {}
+        
         for index in range(len(self.gpio_devices)):
             srv_name = 'gpio_manager/set_power/' + self.gpio_devices[index]
             client = self.create_client(SetBool,srv_name)
