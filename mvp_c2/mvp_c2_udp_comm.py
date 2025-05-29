@@ -3,7 +3,7 @@ from rclpy.node import Node
 import threading
 import time
 
-from udp_interface import UDPInterface
+from include.udp_interface import UDPInterface
 from std_msgs.msg import ByteMultiArray
 
 
