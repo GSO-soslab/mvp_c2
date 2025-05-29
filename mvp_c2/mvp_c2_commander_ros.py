@@ -142,7 +142,7 @@ class MvpC2Commander(Node):
         if flag == True:
             message_id = self.dccl_obj.id(data)
             # print(message_id, flush = True)
-            print(f'dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
+            print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
             #odometry 
             if message_id == 3:
                 try:
