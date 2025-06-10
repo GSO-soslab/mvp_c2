@@ -12,6 +12,7 @@ from mvp_msgs.msg import HelmState
 
 from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
+from sensor_msgs.msg import NavSatFix
 # from mvp_msgs.srv import GetControlMode
 
 from include.dccl_checksum import check_dccl, package_dccl
@@ -59,6 +60,7 @@ class MvpC2Commander(Node):
         topic_prefix = 'remote/id_' + str(self.remote_id)
         self.remote_odom_pub = self.create_publisher(Odometry, topic_prefix + '/odometry', 10)
         self.remote_geopose_pub = self.create_publisher(GeoPoseStamped, topic_prefix + '/geopose', 10)
+        self.remote_odom_navsat_pub = self.create_publisher(NavSatFix, topic_prefix + '/odometry/navsatfix', 10)
         self.remote_controller_state_pub = self.create_publisher(Bool, topic_prefix + '/controller_state', 10)
         self.remote_helm_state_pub = self.create_publisher(HelmState, topic_prefix + '/helm/state', 10)
         self.remote_wpt_report_pub = self.create_publisher(GeoPath, topic_prefix + '/survey/geopath', 10)
@@ -203,8 +205,22 @@ class MvpC2Commander(Node):
                         msg.pose.orientation.y = proto_msg.orientation[1]
                         msg.pose.orientation.z = proto_msg.orientation[2]
                         msg.pose.orientation.w = proto_msg.orientation[3]
-
                     self.remote_geopose_pub.publish(msg)
+
+                    ##get navsatfix
+                    msg = NavSatFix()
+                    sec = int(proto_msg.time)  
+                    nanosec = int((proto_msg.time - sec) * 1e9)  
+                    msg.header.stamp.sec = sec
+                    msg.header.stamp.nanosec = nanosec
+                    msg.status.status = 0
+                    msg.status.service = 1
+                    msg.latitude =  proto_msg.latitude*0.01
+                    msg.longitude = proto_msg.longitude*0.01
+                    msg.altitude = proto_msg.altitude
+                    msg.position_covariance_type = 1
+                    self.remote_odom_navsat_pub.publish(msg)
+
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
