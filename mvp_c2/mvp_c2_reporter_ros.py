@@ -335,14 +335,17 @@ class MvpC2Reporter(Node):
     ##report GPIO power
     def report_gpio_callback(self):
         if(self.local_report_gpio_tx_flag == False):
-            flag = self.local_report_gpio_client.wait_for_service(timeout_sec=self.ser_wait_time)
-            if flag:
-                request =Trigger.Request()
-                future = self.local_report_gpio_client.call_async(request)
-                future.add_done_callback(self.report_gpio_state_callback_done)
-            # data = []
+            if self.local_report_gpio_client.service_is_ready():
+                flag = self.local_report_gpio_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                if flag:
+                    request =Trigger.Request()
+                    future = self.local_report_gpio_client.call_async(request)
+                    future.add_done_callback(self.report_gpio_state_callback_done)
+                # data = []
+                else:
+                    print(f'Service: [{self.local_report_gpio_client.srv_name}] Timeout', flush=True)
             else:
-                print(f'Service: [{self.local_report_gpio_client.srv_name}] Timeout', flush=True)
+                print(f'Service: [{self.local_report_gpio_client.srv_name}] Not available', flush=True)
 
     def report_gpio_state_callback_done(self, future):
         response = future.result()
@@ -366,16 +369,20 @@ class MvpC2Reporter(Node):
     def report_controller_state_callback(self):
         # Block until the service is available (1-second timeout)
         # try:
-        flag = self.local_report_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
-        if flag:
-            # self.get_logger().info(f"Waiting for service '{self.local_report_controller_client.srv_name}' to become available...")
-            request = Trigger.Request()
-            future = self.local_report_controller_client.call_async(request)
+        if self.local_report_controller_client.service_is_ready():
+            flag = self.local_report_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
+            if flag:
+                # self.get_logger().info(f"Waiting for service '{self.local_report_controller_client.srv_name}' to become available...")
+                request = Trigger.Request()
+                future = self.local_report_controller_client.call_async(request)
 
-            # Handle the response
-            future.add_done_callback(self.report_controller_state_callback_done)
-        else:
-            print(f'Service: [{self.local_report_controller_client.srv_name}] Timeout', flush=True)
+                # Handle the response
+                future.add_done_callback(self.report_controller_state_callback_done)
+            else:
+                print(f'Service: [{self.local_report_controller_client.srv_name}] Timeout', flush=True)
+        else: 
+                print(f'Service: [{self.local_report_controller_client.srv_name}] Not available', flush=True)
+
 
     def report_controller_state_callback_done(self, future):
         response = future.result()
@@ -398,17 +405,22 @@ class MvpC2Reporter(Node):
     def report_helm_state_callback(self):
         # Block until the service is available (1-second timeout)
         # try:
-        flag = self.local_report_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
-        # self.get_logger().info(f"Waiting for service '{self.local_report_helm_client.srv_name}' to become available...")
-        if flag:
-            request = GetState.Request()
-            request.name = ''
-            future = self.local_report_helm_client.call_async(request)
+        if self.local_report_helm_client.service_is_ready():
 
-            # Handle the response
-            future.add_done_callback(self.report_helm_state_callback_done)
+            flag = self.local_report_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
+            # self.get_logger().info(f"Waiting for service '{self.local_report_helm_client.srv_name}' to become available...")
+            if flag:
+                request = GetState.Request()
+                request.name = ''
+                future = self.local_report_helm_client.call_async(request)
+
+                # Handle the response
+                future.add_done_callback(self.report_helm_state_callback_done)
+            else:
+                print(f'Service: [{self.local_report_helm_client.srv_name}] Timeout', flush=True)
         else:
-            print(f'Service: [{self.local_report_helm_client.srv_name}] Timeout', flush=True)
+                print(f'Service: [{self.local_report_helm_client.srv_name}] Not available', flush=True)
+
 
     def report_helm_state_callback_done(self, future):
         response = future.result()
@@ -440,21 +452,23 @@ class MvpC2Reporter(Node):
         return response   
     
     def report_wpt_callback(self):
-        
-        flag = self.local_report_wpt_client.wait_for_service(timeout_sec=self.ser_wait_time)
-        # self.get_logger().info(f"Waiting for service '{self.local_report_wpt_client.srv_name}' to become available...")
-        if flag:
-            request = GetWaypoints.Request()
-            request.count.data = 0
-            future = self.local_report_wpt_client.call_async(request)
+        if self.local_report_wpt_client.service_is_ready():
 
-            # Handle the response
-            future.add_done_callback(self.report_wpt_callback_done)
+            flag = self.local_report_wpt_client.wait_for_service(timeout_sec=self.ser_wait_time)
+            # self.get_logger().info(f"Waiting for service '{self.local_report_wpt_client.srv_name}' to become available...")
+            if flag:
+                request = GetWaypoints.Request()
+                request.count.data = 0
+                future = self.local_report_wpt_client.call_async(request)
+
+                # Handle the response
+                future.add_done_callback(self.report_wpt_callback_done)
+            else:
+                # print("Get Waypoint Service Timeout")
+                print(f'Service: [{self.local_report_wpt_client.srv_name}] Timeout', flush=True)
         else:
-            # print("Get Waypoint Service Timeout")
-            print(f'Service: [{self.local_report_wpt_client.srv_name}] Timeout', flush=True)
-
-
+                print(f'Service: [{self.local_report_wpt_client.srv_name}] not available', flush=True)
+            
     def report_wpt_callback_done(self, future):
         response = future.result()
         # print(response)
