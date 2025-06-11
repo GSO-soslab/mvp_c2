@@ -39,6 +39,8 @@ class MvpC2Commander(Node):
         self.remote_id = self.declare_parameter('remote_id', 2).value
         self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 1.0).value
 
+        self.dccl_tx_joy_interval = self.declare_parameter('dccl_tx_joy_interval', 0.1).value
+
         # self.default_state_list = ['start', 'kill', 'survey', 'profiling', 'teleop']
         self.declare_parameter('helm_state_list', [''])
         self.default_state_list = self.get_parameter('helm_state_list').get_parameter_value().string_array_value
@@ -124,14 +126,18 @@ class MvpC2Commander(Node):
         self.remote_set_power_tx_flag = False
 
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
+        self.timer2 = self.create_timer(self.dccl_tx_joy_interval, self.reset_dccl_tx_joy_flag)
+
 
     def reset_dccl_tx_flag(self):
-        self.local_joy_tx_flag = False
         self.remote_set_controller_tx_flag = False
         self.remote_set_helm_state_tx_flag = False
         self.remote_set_ros_launch_tx_flag = False
         self.remote_set_wpt_tx_flag = False
         self.remote_set_power_tx_flag = False
+
+    def reset_dccl_tx_joy_flag(self):
+        self.local_joy_tx_flag = False
 
     #######################################################
     ############DCCL parsing###############################
