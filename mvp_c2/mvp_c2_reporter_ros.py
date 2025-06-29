@@ -75,6 +75,7 @@ class MvpC2Reporter(Node):
         self.local_set_wpt_client = self.create_client(SendWaypoints, 'mvp_helm/set_waypoints')
         self.local_report_gpio_client = self.create_client(Trigger, 'gpio_manager/get_power_status')
         self.local_set_gpio_clients = {}
+        self.local_reset_datum_client = self.create_client(Trigger, 'reset_datum')
         
         for index in range(len(self.gpio_devices)):
             srv_name = 'gpio_manager/set_power/' + self.gpio_devices[index]
@@ -251,7 +252,19 @@ class MvpC2Reporter(Node):
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
-
+            
+            ##reset datum
+            if message_id == 34:
+                try:
+                    self.dccl_obj.load('ResetDatum')
+                    proto_msg = self.dccl_obj.decode(data)
+                    self.local_reset_datum_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                    request = Trigger.Request()  
+                    future = self.local_reset_datum_client.call_async(request)
+                    print("Datum reset triggered", flush =True)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
     ##publish dccl 
     def publish_dccl(self, proto):
         dccl_msg = ByteMultiArray()

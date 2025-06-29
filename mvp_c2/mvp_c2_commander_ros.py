@@ -77,6 +77,7 @@ class MvpC2Commander(Node):
         self.remote_set_controller_srv = self.create_service(SetBool, topic_prefix + '/controller/set', self.remote_set_controller_callback)
         self.remote_set_state_srv = self.create_service(SetString, topic_prefix + '/mvp_helm/change_state', self.remote_set_helm_state_callback)
         self.remote_set_wpt_srv = self.create_service(SendWaypoints, topic_prefix + '/mvp_helm/set_waypoints', self.remote_set_waypoints_callback)
+        self.remote_reset_datum_srv = self.create_service(Trigger, topic_prefix + '/reset_data', self.reset_datum_callback)
 
         ##service for roslaunch files
         if len(self.launch_packages) == len(self.launch_file_names):
@@ -126,6 +127,7 @@ class MvpC2Commander(Node):
         self.remote_set_ros_launch_tx_flag = False
         self.remote_set_wpt_tx_flag = False
         self.remote_set_power_tx_flag = False
+        self.remote_reset_datum_flag = False
 
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
         self.timer2 = self.create_timer(self.dccl_tx_joy_interval, self.reset_dccl_tx_joy_flag)
@@ -137,6 +139,8 @@ class MvpC2Commander(Node):
         self.remote_set_ros_launch_tx_flag = False
         self.remote_set_wpt_tx_flag = False
         self.remote_set_power_tx_flag = False
+        self.remote_reset_datum_flag = False
+
 
     def reset_dccl_tx_joy_flag(self):
         self.local_joy_tx_flag = False
@@ -415,7 +419,7 @@ class MvpC2Commander(Node):
                 proto.altitude.append(request.wpt[i].ll_wpt.altitude) 
 
             if self.remote_set_wpt_tx_flag is False:
-                print(proto, flush=True)
+                # print(proto, flush=True)
                 self.publish_dccl(proto)
                 self.remote_set_wpt_tx_flag = True
 
@@ -425,6 +429,22 @@ class MvpC2Commander(Node):
             response.success = False
             return response
             
+        response.success = False
+        return response
+
+    #reset datum
+    def reset_datum_callback(self, request, response):
+        self.dccl_obj.load('ResetDatum')
+        proto = mvp_cmd_dccl_pb2.ResetDatum()
+        proto.time = round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        if self.remote_reset_datum_flag is False:
+            # print(proto, flush=True)
+            self.publish_dccl(proto)
+            self.remote_reset_datum_flag = True
+            response.success = True
+            return response
         response.success = False
         return response
 
