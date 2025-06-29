@@ -65,6 +65,16 @@ message PowerMonitor{
     repeated double data = 4 [ (dccl.field) = {min: 0.0 max: 30.0 precision: 2 max_repeat: 2} ];
 }
 
+message CPUMonitor{
+    option (dccl.msg) = { codec_version: 4
+                          id: 6
+                          max_bytes: 32 };
+    required double time = 1 [ (dccl.field) = {min: 1750000000 max: 1800000000 precision: 3} ];
+    required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
+    required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
+    repeated double data = 4 [ (dccl.field) = {min: 0.0 max: 100.0 precision: 2 max_repeat: 3} ];
+}
+
 message SetPowerPort{
     option (dccl.msg) = { codec_version: 4
         id: 20
@@ -165,6 +175,16 @@ message ReportWpt{
     repeated double longitude = 6 [ (dccl.field) = {min: -18000.0 max: 18000.0 precision: 6 max_repeat: 10 } ];
     repeated double altitude = 7 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 2 max_repeat: 10 } ];
 }
+
+message ResetDatum{
+    option (dccl.msg) = { codec_version: 4
+                          id: 34
+                          max_bytes: 32 };
+    required double time = 1 [ (dccl.field) = {min: 1750000000 max: 1800000000 precision: 3} ];
+    required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
+    required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];    
+}
+
 
 
 //systems related

@@ -4,7 +4,7 @@ import dccl
 import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Bool, ByteMultiArray
+from std_msgs.msg import Bool, ByteMultiArray, Float32MultiArray
 from sensor_msgs.msg import Joy
 # from mvp_msgs.srv import SetString
 from mvp_msgs.srv import ChangeState, GetState, GetWaypoints, SendWaypoints
@@ -62,6 +62,9 @@ class MvpC2Reporter(Node):
         
         self.local_odom_sub = self.create_subscription(Odometry, 'local/odometry', self.odom_callback, 10)
         self.local_geopose_sub = self.create_subscription(GeoPoseStamped, 'local/geopose', self.geopose_callback, 10)
+        self.power_vi_sub = self.create_subscription(Float32MultiArray, 'local/power_monitor', self.power_vi_callback,10)
+        self.cpu_info_sub = self.create_subscription(Float32MultiArray, 'local/cpu_info', self.cpu_info_callback,10)
+
 
         #client for local controllers
         self.local_set_controller_client = self.create_client(SetBool, 'controller/set')
@@ -105,6 +108,9 @@ class MvpC2Reporter(Node):
         self.local_report_wpt_tx_flag = False
         self.local_report_roslaunch_tx_flag = False
         self.local_report_gpio_tx_flag = False
+        self.local_power_info_tx_flag = False
+        self.local_cpu_info_tx_flag = False
+
 
 
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
@@ -123,6 +129,8 @@ class MvpC2Reporter(Node):
         self.local_report_wpt_tx_flag = False
         self.local_report_roslaunch_tx_flag = False
         self.local_report_gpio_tx_flag = False
+        self.local_power_info_tx_flag = False
+        self.local_cpu_info_tx_flag = False
 
 
     #######################################################
@@ -310,6 +318,32 @@ class MvpC2Reporter(Node):
         if self.local_geopose_tx_flag is False:
             self.publish_dccl(proto)
             self.local_geopose_tx_flag = True
+
+    #power monitor
+    def power_vi_callback(self, msg):
+        self.dccl_obj.load('PowerMonitor')
+        proto = mvp_cmd_dccl_pb2.PowerMonitor()
+        # proto.time = msg.header.stamp.to_sec()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.data.extend([msg.data[0], msg.data[1]])
+        if self.local_power_info_tx_flag is False:
+            self.publish_dccl(proto)
+            self.local_power_info_tx_flag = True
+    
+    #cpu monitor
+    def cpu_info_callback(self, msg):
+        self.dccl_obj.load('CPUMonitor')
+        proto = mvp_cmd_dccl_pb2.CPUMonitor()
+        # proto.time = msg.header.stamp.to_sec()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.data.extend([ msg.data[0], msg.data[1], msg.data[2]])
+        if self.local_cpu_info_tx_flag is False:
+            self.publish_dccl(proto)
+            self.local_cpu_info_tx_flag = True
 
     def report_roslaunch_callback(self):
         if(self.local_report_roslaunch_tx_flag == False):

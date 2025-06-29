@@ -4,7 +4,7 @@ import dccl
 import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Bool, ByteMultiArray, Int16MultiArray
+from std_msgs.msg import Bool, ByteMultiArray, Int16MultiArray, Float32MultiArray
 from sensor_msgs.msg import Joy
 from geographic_msgs.msg import GeoPath
 from mvp_msgs.srv import SetString, SendWaypoints
@@ -68,6 +68,8 @@ class MvpC2Commander(Node):
         self.remote_wpt_report_pub = self.create_publisher(GeoPath, topic_prefix + '/survey/geopath', 10)
         self.remote_roslaunch_report_pub = self.create_publisher(Int16MultiArray, topic_prefix +'/roslaunch_state', 10)
         self.remote_gpio_power_report_pub = self.create_publisher(Int16MultiArray, topic_prefix+'/gpio_power_state',10)
+        self.remote_power_info_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/power_info',10)
+        self.remote_cpu_info_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/cpu_info',10)
 
         self.local_joy_sub = self.create_subscription(Joy, topic_prefix + '/joy', self.joy_callback, 10)
 
@@ -230,7 +232,33 @@ class MvpC2Commander(Node):
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
-            
+
+            ##Power info message
+            if message_id == 5:
+                try:
+                    self.dccl_obj.load('PowerMonitor')
+                    proto_msg = self.dccl_obj.decode(data)
+                    #call the service and make the dccl msg
+                    msg = Float32MultiArray()
+                    msg.data = [proto_msg.data[0], proto_msg.data[1]]
+                    self.remote_power_info_pub.publish(msg)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
+            ##CPU info message
+            if message_id == 6:
+                try:
+                    self.dccl_obj.load('PowerMonitor')
+                    proto_msg = self.dccl_obj.decode(data)
+                    #call the service and make the dccl msg
+                    msg = Float32MultiArray()
+                    msg.data = [proto_msg.data[0], proto_msg.data[1], proto_msg.data[2]]
+                    self.remote_cpu_info_pub.publish(msg)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
             ##report controller message
             if message_id == 23:
                 try:
