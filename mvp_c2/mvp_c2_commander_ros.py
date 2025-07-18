@@ -417,6 +417,7 @@ class MvpC2Commander(Node):
                 proto.latitude.append(request.wpt[i].ll_wpt.latitude*100)
                 proto.longitude.append(request.wpt[i].ll_wpt.longitude*100)
                 proto.altitude.append(request.wpt[i].ll_wpt.altitude) 
+                proto.u.append(request.wpt[i].u)
 
             if self.remote_set_wpt_tx_flag is False:
                 # print(proto, flush=True)

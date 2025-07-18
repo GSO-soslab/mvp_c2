@@ -159,6 +159,7 @@ message SetWpt{
     repeated double latitude = 5 [ (dccl.field) = {min: -9000.0 max: 9000.0 precision: 6 max_repeat: 10 } ];
     repeated double longitude = 6 [ (dccl.field) = {min: -18000.0 max: 18000.0 precision: 6 max_repeat: 10 } ];
     repeated double altitude = 7 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 2 max_repeat: 10 } ];
+    repeated double u = 8 [ (dccl.field) = {min: -2.0 max: 2.0 precision: 2 max_repeat: 10 } ];
 }
 
 //report current waypoint
@@ -174,6 +175,7 @@ message ReportWpt{
     repeated double latitude = 5 [ (dccl.field) = {min: -9000.0 max: 9000.0 precision: 6 max_repeat: 10 } ];
     repeated double longitude = 6 [ (dccl.field) = {min: -18000.0 max: 18000.0 precision: 6 max_repeat: 10 } ];
     repeated double altitude = 7 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 2 max_repeat: 10 } ];
+    repeated double u = 8 [ (dccl.field) = {min: -2.0 max: 2.0 precision: 2 max_repeat: 10 } ];
 }
 
 message ResetDatum{

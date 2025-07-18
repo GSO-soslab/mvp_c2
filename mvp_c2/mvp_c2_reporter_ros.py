@@ -248,6 +248,7 @@ class MvpC2Reporter(Node):
                         request.wpt[i].ll_wpt.latitude = proto_msg.latitude[i]*0.01
                         request.wpt[i].ll_wpt.longitude = proto_msg.longitude[i]*0.01
                         request.wpt[i].ll_wpt.altitude = proto_msg.altitude[i]
+                        request.wpt[i].u = proto_msg.u[i]
                     future = self.local_set_wpt_client.call_async(request)
                 except Exception as e:
                     # Print the exception message for debugging
@@ -532,6 +533,7 @@ class MvpC2Reporter(Node):
             proto.latitude.append(response.wpt[i].ll_wpt.latitude*100)
             proto.longitude.append(response.wpt[i].ll_wpt.longitude*100)
             proto.altitude.append(response.wpt[i].ll_wpt.altitude)    
+            proto.u.append(response.wpt[i].u)
             # print (i)                           
 
         if self.local_report_wpt_tx_flag is False:
