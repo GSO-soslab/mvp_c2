@@ -63,7 +63,7 @@ class MvpC2Reporter(Node):
         self.local_odom_sub = self.create_subscription(Odometry, 'local/odometry', self.odom_callback, 10)
         self.local_geopose_sub = self.create_subscription(GeoPoseStamped, 'local/geopose', self.geopose_callback, 10)
         self.power_vi_sub = self.create_subscription(Float32MultiArray, 'local/power_monitor', self.power_vi_callback,10)
-        self.cpu_info_sub = self.create_subscription(Float32MultiArray, 'local/cpu_info', self.cpu_info_callback,10)
+        self.cpu_info_sub = self.create_subscription(Float32MultiArray, 'local/computer_info', self.cpu_info_callback,10)
 
 
         #client for local controllers
