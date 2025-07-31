@@ -8,7 +8,7 @@ from std_msgs.msg import Bool, ByteMultiArray, Int16MultiArray, Float32MultiArra
 from sensor_msgs.msg import Joy
 from geographic_msgs.msg import GeoPath
 from mvp_msgs.srv import SetString, SendWaypoints
-from mvp_msgs.msg import HelmState
+from mvp_msgs.msg import HelmState, Waypoints, Waypoint
 
 from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
@@ -65,7 +65,7 @@ class MvpC2Commander(Node):
         self.remote_odom_navsat_pub = self.create_publisher(NavSatFix, topic_prefix + '/odometry/navsatfix', 10)
         self.remote_controller_state_pub = self.create_publisher(Bool, topic_prefix + '/controller_state', 10)
         self.remote_helm_state_pub = self.create_publisher(HelmState, topic_prefix + '/helm/state', 10)
-        self.remote_wpt_report_pub = self.create_publisher(GeoPath, topic_prefix + '/survey/geopath', 10)
+        self.remote_wpt_report_pub = self.create_publisher(Waypoints, topic_prefix + '/survey/geopath', 10)
         self.remote_roslaunch_report_pub = self.create_publisher(Int16MultiArray, topic_prefix +'/roslaunch_state', 10)
         self.remote_gpio_power_report_pub = self.create_publisher(Int16MultiArray, topic_prefix+'/gpio_power_state',10)
         self.remote_power_info_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/power_info',10)
@@ -295,17 +295,18 @@ class MvpC2Commander(Node):
                 try:
                     self.dccl_obj.load('ReportWpt')
                     proto_msg = self.dccl_obj.decode(data)
-                    msg = GeoPath()
+                    msg = Waypoints()
                     sec = int(proto_msg.time)  
                     nanosec = int((proto_msg.time - sec) * 1e9)  
-                    msg.header.stamp.sec = sec
-                    msg.header.stamp.nanosec = nanosec
-                    msg.header.frame_id = 'geopath'
-                    msg.poses = [GeoPoseStamped() for _ in range(proto_msg.wpt_size)]
+                    msg.wpt = [Waypoint() for _ in range(proto_msg.wpt_size)]
                     for i in range(proto_msg.wpt_size):
-                        msg.poses[i].pose.position.latitude = proto_msg.latitude[i]*0.01
-                        msg.poses[i].pose.position.longitude = proto_msg.longitude[i]*0.01
-                        msg.poses[i].pose.position.altitude = proto_msg.altitude[i]
+                        msg.wpt[i].header.stamp.sec = sec
+                        msg.wpt[i].header.stamp.nanosec = nanosec
+                        msg.wpt[i].header.frame_id = 'geopath'
+                        msg.wpt[i].ll_wpt.latitude = proto_msg.latitude[i]*0.01
+                        msg.wpt[i].ll_wpt.longitude = proto_msg.longitude[i]*0.01
+                        msg.wpt[i].ll_wpt.altitude = proto_msg.altitude[i]
+                        msg.wpt[i].u = proto_msg.u[i]
                     self.remote_wpt_report_pub.publish(msg)
 
                 except Exception as e:
