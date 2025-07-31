@@ -253,7 +253,7 @@ class MvpC2Commander(Node):
             ##CPU info message
             if message_id == 6:
                 try:
-                    self.dccl_obj.load('PowerMonitor')
+                    self.dccl_obj.load('CPUMonitor')
                     proto_msg = self.dccl_obj.decode(data)
                     #call the service and make the dccl msg
                     msg = Float32MultiArray()
