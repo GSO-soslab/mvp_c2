@@ -77,7 +77,7 @@ class MvpC2Commander(Node):
         self.remote_set_controller_srv = self.create_service(SetBool, topic_prefix + '/controller/set', self.remote_set_controller_callback)
         self.remote_set_state_srv = self.create_service(SetString, topic_prefix + '/mvp_helm/change_state', self.remote_set_helm_state_callback)
         self.remote_set_wpt_srv = self.create_service(SendWaypoints, topic_prefix + '/mvp_helm/set_waypoints', self.remote_set_waypoints_callback)
-        self.remote_reset_datum_srv = self.create_service(Trigger, topic_prefix + '/reset_data', self.reset_datum_callback)
+        self.remote_reset_datum_srv = self.create_service(Trigger, topic_prefix + '/reset_datum', self.reset_datum_callback)
 
         ##service for roslaunch files
         if len(self.launch_packages) == len(self.launch_file_names):
