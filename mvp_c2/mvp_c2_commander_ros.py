@@ -4,11 +4,11 @@ import dccl
 import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Bool, ByteMultiArray, Int16MultiArray
+from std_msgs.msg import Bool, ByteMultiArray, Int16MultiArray, Float32MultiArray
 from sensor_msgs.msg import Joy
 from geographic_msgs.msg import GeoPath
 from mvp_msgs.srv import SetString, SendWaypoints
-from mvp_msgs.msg import HelmState
+from mvp_msgs.msg import HelmState, Waypoints, Waypoint
 
 from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
@@ -65,9 +65,11 @@ class MvpC2Commander(Node):
         self.remote_odom_navsat_pub = self.create_publisher(NavSatFix, topic_prefix + '/odometry/navsatfix', 10)
         self.remote_controller_state_pub = self.create_publisher(Bool, topic_prefix + '/controller_state', 10)
         self.remote_helm_state_pub = self.create_publisher(HelmState, topic_prefix + '/helm/state', 10)
-        self.remote_wpt_report_pub = self.create_publisher(GeoPath, topic_prefix + '/survey/geopath', 10)
+        self.remote_wpt_report_pub = self.create_publisher(Waypoints, topic_prefix + '/survey/geopath', 10)
         self.remote_roslaunch_report_pub = self.create_publisher(Int16MultiArray, topic_prefix +'/roslaunch_state', 10)
         self.remote_gpio_power_report_pub = self.create_publisher(Int16MultiArray, topic_prefix+'/gpio_power_state',10)
+        self.remote_power_info_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/power_info',10)
+        self.remote_cpu_info_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/computer_info',10)
 
         self.local_joy_sub = self.create_subscription(Joy, topic_prefix + '/joy', self.joy_callback, 10)
 
@@ -75,6 +77,7 @@ class MvpC2Commander(Node):
         self.remote_set_controller_srv = self.create_service(SetBool, topic_prefix + '/controller/set', self.remote_set_controller_callback)
         self.remote_set_state_srv = self.create_service(SetString, topic_prefix + '/mvp_helm/change_state', self.remote_set_helm_state_callback)
         self.remote_set_wpt_srv = self.create_service(SendWaypoints, topic_prefix + '/mvp_helm/set_waypoints', self.remote_set_waypoints_callback)
+        self.remote_reset_datum_srv = self.create_service(Trigger, topic_prefix + '/reset_datum', self.reset_datum_callback)
 
         ##service for roslaunch files
         if len(self.launch_packages) == len(self.launch_file_names):
@@ -124,6 +127,7 @@ class MvpC2Commander(Node):
         self.remote_set_ros_launch_tx_flag = False
         self.remote_set_wpt_tx_flag = False
         self.remote_set_power_tx_flag = False
+        self.remote_reset_datum_flag = False
 
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
         self.timer2 = self.create_timer(self.dccl_tx_joy_interval, self.reset_dccl_tx_joy_flag)
@@ -135,6 +139,8 @@ class MvpC2Commander(Node):
         self.remote_set_ros_launch_tx_flag = False
         self.remote_set_wpt_tx_flag = False
         self.remote_set_power_tx_flag = False
+        self.remote_reset_datum_flag = False
+
 
     def reset_dccl_tx_joy_flag(self):
         self.local_joy_tx_flag = False
@@ -230,7 +236,33 @@ class MvpC2Commander(Node):
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
-            
+
+            ##Power info message
+            if message_id == 5:
+                try:
+                    self.dccl_obj.load('PowerMonitor')
+                    proto_msg = self.dccl_obj.decode(data)
+                    #call the service and make the dccl msg
+                    msg = Float32MultiArray()
+                    msg.data = [proto_msg.data[0], proto_msg.data[1]]
+                    self.remote_power_info_pub.publish(msg)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
+            ##CPU info message
+            if message_id == 6:
+                try:
+                    self.dccl_obj.load('CPUMonitor')
+                    proto_msg = self.dccl_obj.decode(data)
+                    #call the service and make the dccl msg
+                    msg = Float32MultiArray()
+                    msg.data = [proto_msg.data[0], proto_msg.data[1], proto_msg.data[2]]
+                    self.remote_cpu_info_pub.publish(msg)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
             ##report controller message
             if message_id == 23:
                 try:
@@ -263,17 +295,18 @@ class MvpC2Commander(Node):
                 try:
                     self.dccl_obj.load('ReportWpt')
                     proto_msg = self.dccl_obj.decode(data)
-                    msg = GeoPath()
+                    msg = Waypoints()
                     sec = int(proto_msg.time)  
                     nanosec = int((proto_msg.time - sec) * 1e9)  
-                    msg.header.stamp.sec = sec
-                    msg.header.stamp.nanosec = nanosec
-                    msg.header.frame_id = 'geopath'
-                    msg.poses = [GeoPoseStamped() for _ in range(proto_msg.wpt_size)]
+                    msg.wpt = [Waypoint() for _ in range(proto_msg.wpt_size)]
                     for i in range(proto_msg.wpt_size):
-                        msg.poses[i].pose.position.latitude = proto_msg.latitude[i]*0.01
-                        msg.poses[i].pose.position.longitude = proto_msg.longitude[i]*0.01
-                        msg.poses[i].pose.position.altitude = proto_msg.altitude[i]
+                        msg.wpt[i].header.stamp.sec = sec
+                        msg.wpt[i].header.stamp.nanosec = nanosec
+                        msg.wpt[i].header.frame_id = 'geopath'
+                        msg.wpt[i].ll_wpt.latitude = proto_msg.latitude[i]*0.01
+                        msg.wpt[i].ll_wpt.longitude = proto_msg.longitude[i]*0.01
+                        msg.wpt[i].ll_wpt.altitude = proto_msg.altitude[i]
+                        msg.wpt[i].u = proto_msg.u[i]
                     self.remote_wpt_report_pub.publish(msg)
 
                 except Exception as e:
@@ -385,9 +418,10 @@ class MvpC2Commander(Node):
                 proto.latitude.append(request.wpt[i].ll_wpt.latitude*100)
                 proto.longitude.append(request.wpt[i].ll_wpt.longitude*100)
                 proto.altitude.append(request.wpt[i].ll_wpt.altitude) 
+                proto.u.append(request.wpt[i].u)
 
             if self.remote_set_wpt_tx_flag is False:
-                print(proto, flush=True)
+                # print(proto, flush=True)
                 self.publish_dccl(proto)
                 self.remote_set_wpt_tx_flag = True
 
@@ -397,6 +431,22 @@ class MvpC2Commander(Node):
             response.success = False
             return response
             
+        response.success = False
+        return response
+
+    #reset datum
+    def reset_datum_callback(self, request, response):
+        self.dccl_obj.load('ResetDatum')
+        proto = mvp_cmd_dccl_pb2.ResetDatum()
+        proto.time = round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        if self.remote_reset_datum_flag is False:
+            # print(proto, flush=True)
+            self.publish_dccl(proto)
+            self.remote_reset_datum_flag = True
+            response.success = True
+            return response
         response.success = False
         return response
 

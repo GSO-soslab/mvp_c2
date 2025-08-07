@@ -4,7 +4,7 @@ import dccl
 import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Bool, ByteMultiArray
+from std_msgs.msg import Bool, ByteMultiArray, Float32MultiArray
 from sensor_msgs.msg import Joy
 # from mvp_msgs.srv import SetString
 from mvp_msgs.srv import ChangeState, GetState, GetWaypoints, SendWaypoints
@@ -62,6 +62,9 @@ class MvpC2Reporter(Node):
         
         self.local_odom_sub = self.create_subscription(Odometry, 'local/odometry', self.odom_callback, 10)
         self.local_geopose_sub = self.create_subscription(GeoPoseStamped, 'local/geopose', self.geopose_callback, 10)
+        self.power_vi_sub = self.create_subscription(Float32MultiArray, 'local/power_monitor', self.power_vi_callback,10)
+        self.cpu_info_sub = self.create_subscription(Float32MultiArray, 'local/computer_info', self.cpu_info_callback,10)
+
 
         #client for local controllers
         self.local_set_controller_client = self.create_client(SetBool, 'controller/set')
@@ -72,6 +75,7 @@ class MvpC2Reporter(Node):
         self.local_set_wpt_client = self.create_client(SendWaypoints, 'mvp_helm/set_waypoints')
         self.local_report_gpio_client = self.create_client(Trigger, 'gpio_manager/get_power_status')
         self.local_set_gpio_clients = {}
+        self.local_reset_datum_client = self.create_client(Trigger, 'reset_datum')
         
         for index in range(len(self.gpio_devices)):
             srv_name = 'gpio_manager/set_power/' + self.gpio_devices[index]
@@ -105,6 +109,9 @@ class MvpC2Reporter(Node):
         self.local_report_wpt_tx_flag = False
         self.local_report_roslaunch_tx_flag = False
         self.local_report_gpio_tx_flag = False
+        self.local_power_info_tx_flag = False
+        self.local_cpu_info_tx_flag = False
+
 
 
         self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
@@ -123,6 +130,8 @@ class MvpC2Reporter(Node):
         self.local_report_wpt_tx_flag = False
         self.local_report_roslaunch_tx_flag = False
         self.local_report_gpio_tx_flag = False
+        self.local_power_info_tx_flag = False
+        self.local_cpu_info_tx_flag = False
 
 
     #######################################################
@@ -239,11 +248,24 @@ class MvpC2Reporter(Node):
                         request.wpt[i].ll_wpt.latitude = proto_msg.latitude[i]*0.01
                         request.wpt[i].ll_wpt.longitude = proto_msg.longitude[i]*0.01
                         request.wpt[i].ll_wpt.altitude = proto_msg.altitude[i]
+                        request.wpt[i].u = proto_msg.u[i]
                     future = self.local_set_wpt_client.call_async(request)
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
-
+            
+            ##reset datum
+            if message_id == 34:
+                try:
+                    self.dccl_obj.load('ResetDatum')
+                    proto_msg = self.dccl_obj.decode(data)
+                    self.local_reset_datum_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                    request = Trigger.Request()  
+                    future = self.local_reset_datum_client.call_async(request)
+                    print("Datum reset triggered", flush =True)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
     ##publish dccl 
     def publish_dccl(self, proto):
         dccl_msg = ByteMultiArray()
@@ -310,6 +332,32 @@ class MvpC2Reporter(Node):
         if self.local_geopose_tx_flag is False:
             self.publish_dccl(proto)
             self.local_geopose_tx_flag = True
+
+    #power monitor
+    def power_vi_callback(self, msg):
+        self.dccl_obj.load('PowerMonitor')
+        proto = mvp_cmd_dccl_pb2.PowerMonitor()
+        # proto.time = msg.header.stamp.to_sec()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.data.extend([msg.data[0], msg.data[1]])
+        if self.local_power_info_tx_flag is False:
+            self.publish_dccl(proto)
+            self.local_power_info_tx_flag = True
+    
+    #cpu monitor
+    def cpu_info_callback(self, msg):
+        self.dccl_obj.load('CPUMonitor')
+        proto = mvp_cmd_dccl_pb2.CPUMonitor()
+        # proto.time = msg.header.stamp.to_sec()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.data.extend([ msg.data[0], msg.data[1], msg.data[2]])
+        if self.local_cpu_info_tx_flag is False:
+            self.publish_dccl(proto)
+            self.local_cpu_info_tx_flag = True
 
     def report_roslaunch_callback(self):
         if(self.local_report_roslaunch_tx_flag == False):
@@ -485,6 +533,7 @@ class MvpC2Reporter(Node):
             proto.latitude.append(response.wpt[i].ll_wpt.latitude*100)
             proto.longitude.append(response.wpt[i].ll_wpt.longitude*100)
             proto.altitude.append(response.wpt[i].ll_wpt.altitude)    
+            proto.u.append(response.wpt[i].u)
             # print (i)                           
 
         if self.local_report_wpt_tx_flag is False:
