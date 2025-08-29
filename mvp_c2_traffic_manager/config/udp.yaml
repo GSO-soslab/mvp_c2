@@ -4,12 +4,11 @@
     udp:
       mac:
         local_address: 0
+        local_slot_time: 30
         max_frame_bytes: 100
         #Set the remote address's and coresponding slot times
-        # remotes:
-        #   - [1, 500]
-        #   - [2, 500]
-        #   - [4, 100]
+        remotes:
+          "1": 30
 
 
       messages:

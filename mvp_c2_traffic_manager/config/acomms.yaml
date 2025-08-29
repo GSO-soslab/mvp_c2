@@ -4,12 +4,12 @@
     acomms:
       mac:
         local_address: 0
+        local_slot_time: 30
         max_frame_bytes: 100
         #Set the remote address's and coresponding slot times
         remotes:
-          "1": 500
-          "2": 500
-          "4": 100
+          "1": 30
+
 
 
       messages:
@@ -150,6 +150,6 @@
           ack: false
           blackout_time: 0
           max_queue: 1
-          newest_first: false
+          newest_first: true
           ttl: 1800
           value_base: 1

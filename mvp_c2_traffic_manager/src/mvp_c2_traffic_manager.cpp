@@ -37,8 +37,6 @@ MvpC2TrafficManager::MvpC2TrafficManager(std::string name) : Node(name)
     // ===================================================================== //
 
     // parseGobyParams();
-
-    printf("MvpC2TrafficManager: loading config...\n");
     loadConfig();
 
     // ===================================================================== //
@@ -72,84 +70,104 @@ void MvpC2TrafficManager::loop()
 }
 
 void MvpC2TrafficManager::loadConfig() {
+  this->declare_parameter<std::vector<std::string>>("load_config", std::vector<std::string>{});
+  std::vector<std::string> configs;
+  this->get_parameter("load_config", configs);
 
+  for (const auto & type : configs) {
 
-    this->declare_parameter<std::vector<std::string>>("load_config", std::vector<std::string>());
-    std::vector<std::string> configs;
-    this->get_parameter("load_config", configs);
+    RCLCPP_INFO(this->get_logger(), "Loading config for '%s'", type.c_str());
 
+    // prefer int64_t declarations for ints
+    this->declare_parameter<int64_t>(type + ".mac.local_address", 1);
+    this->get_parameter(type + ".mac.local_address", config_[type].mac.local_address);
 
-    for(const auto & type : configs)
-    {
-        this->declare_parameter<int>(type+".mac.local_address", 1);
-        this->get_parameter(type+".mac.local_address", config_[type].mac.local_address);
+    this->declare_parameter<int64_t>(type + ".mac.local_slot_time", 30);
+    this->get_parameter(type + ".mac.local_slot_time", config_[type].mac.local_slot_time);
 
-        this->declare_parameter<int>(type+".mac.max_frame_bytes", 100);
-        this->get_parameter(type+".mac.max_frame_bytes", config_[type].mac.max_frame_bytes);
+    this->declare_parameter<int64_t>(type + ".mac.max_frame_bytes", 100);
+    this->get_parameter(type + ".mac.max_frame_bytes", config_[type].mac.max_frame_bytes);
 
-        auto listed = this->list_parameters({type+".mac.remotes"}, 1);
+    RCLCPP_INFO(this->get_logger(), "  local_address: %d", config_[type].mac.local_address);
+    RCLCPP_INFO(this->get_logger(), "  local_slot_time: %d", config_[type].mac.local_slot_time);
+    RCLCPP_INFO(this->get_logger(), "  max_frame_bytes: %d", config_[type].mac.max_frame_bytes);
 
-        // Collect full names, e.g. "remotes.1"
-        std::vector<std::string> names = listed.names;
+    RCLCPP_INFO(this->get_logger(), "  Remotes:");
 
-        std::vector<rclcpp::Parameter> params;
-        this->get_parameters(names, params);
+    // ----- remotes dict: <type>.mac.remotes.<key> = <value> -----
+    const std::string prefix = type + ".mac.remotes";
+    auto pif = this->get_node_parameters_interface();
+    const auto & overrides = pif->get_parameter_overrides(); // name -> ParameterValue
 
-        std::map<int,int> remotes;
-        for (const auto & p : params) {
-        // Drop the "remotes." prefix
-        std::string suffix = p.get_name().substr(std::string("remotes.").size());
-        int key   = std::stoi(suffix);
-        int value = static_cast<int>(p.as_int());  // ROS stores ints as int64_t
-        remotes.emplace(key, value);
-        }
-
-        for (auto &[k,v] : remotes) {
-        RCLCPP_INFO(this->get_logger(), "Remote %d -> %d", k, v);
-        }
-
-        RCLCPP_INFO(get_logger(), "Loading config from: %s", type.c_str());
-        RCLCPP_INFO(get_logger(), "  local_address: %d", config_[type].mac.local_address);
-        // RCLCPP_INFO(get_logger(), "  remote_address size: %d", (int)config_[type].mac.remote_address.size());
-        RCLCPP_INFO(get_logger(), "  max_frame_bytes: %d", config_[type].mac.max_frame_bytes);
-        // RCLCPP_INFO(get_logger(), "  mac_slot_time size: %d", (int)config_[type].mac.mac_slot_time.size());
-
-
-        // load message config
-        this->declare_parameter<std::vector<std::string>>(type+".messages.load", std::vector<std::string>());
-        std::vector<std::string> messages;
-        this->get_parameter(type+".messages.load", messages);
-
-        for (const auto & message : messages)
-        {
-            this->declare_parameter<bool>(type+".messages."+message+".ack", false);
-            this->get_parameter(type+".messages."+message+".ack", config_[type].msg[message].ack);
-
-            this->declare_parameter<int>(type+".messages."+message+".blackout_time", 0);
-            this->get_parameter(type+".messages."+message+".blackout_time", config_[type].msg[message].blackout_time);
-
-            this->declare_parameter<int>(type+".messages."+message+".max_queue", 0);
-            this->get_parameter(type+".messages."+message+".max_queue", config_[type].msg[message].max_queue);
-
-            this->declare_parameter<bool>(type+".messages."+message+".newest_first", true);
-            this->get_parameter(type+".messages."+message+".newest_first", config_[type].msg[message].newest_first);      
-
-            this->declare_parameter<int>(type+".messages."+message+".ttl", 1800);
-            this->get_parameter(type+".messages."+message+".ttl", config_[type].msg[message].ttl);            
-
-            this->declare_parameter<int>(type+".messages."+message+".value_base", 1);
-            this->get_parameter(type+".messages."+message+".value_base", config_[type].msg[message].value_base);
-            
-            RCLCPP_INFO(get_logger(), "%s", message.c_str());
-            RCLCPP_INFO(get_logger(), "    ack: %s", config_[type].msg[message].ack ? "true" : "false");
-            RCLCPP_INFO(get_logger(), "    blackout_time: %d", config_[type].msg[message].blackout_time);
-            RCLCPP_INFO(get_logger(), "    max_queue: %d", config_[type].msg[message].max_queue);
-            RCLCPP_INFO(get_logger(), "    newest_first: %s", config_[type].msg[message].newest_first ? "true" : "false");
-            RCLCPP_INFO(get_logger(), "    ttl: %d", config_[type].msg[message].ttl);
-            RCLCPP_INFO(get_logger(), "    value_base: %d", config_[type].msg[message].value_base);
-        }
-
-
-
+    // declare each remote so list/get will see them
+    for (const auto & kv : overrides) {
+    if (kv.first.rfind(prefix, 0) == 0 && !this->has_parameter(kv.first)) {
+        this->declare_parameter<int64_t>(kv.first, 0);
     }
+    }
+
+    auto listed = pif->list_parameters({prefix}, /*depth=*/1);
+    auto params = pif->get_parameters(listed.names);  // <-- fixed overload
+
+    std::map<int,int> remotes;
+    const std::string dot = prefix + ".";
+    for (const auto & p : params) {
+      const std::string & full = p.get_name();            // e.g. "acomms.mac.remotes.1"
+      if (full.rfind(dot, 0) != 0) continue;
+      const std::string suffix = full.substr(dot.size()); // "1"
+      try {
+        int key = std::stoi(suffix);
+        int val = static_cast<int>(p.as_int());           // int64 -> int
+        remotes.emplace(key, val);
+      } catch (const std::exception & e) {
+        RCLCPP_WARN(this->get_logger(), "Skip '%s': %s", full.c_str(), e.what());
+      }
+    }
+    config_[type].mac.remotes = std::move(remotes);
+
+    for(const auto & r : config_[type].mac.remotes) {
+      RCLCPP_INFO(this->get_logger(), "    address %d: slot time %d", r.first, r.second);
+    }
+
+    // ----- messages -----
+    RCLCPP_INFO(this->get_logger(), "  Messages:");
+    this->declare_parameter<std::vector<std::string>>(type + ".messages.load",
+                                                      std::vector<std::string>{});
+    std::vector<std::string> messages;
+    this->get_parameter(type + ".messages.load", messages);
+
+    for (const auto & message : messages) {
+        const std::string base = type + ".messages." + message + ".";
+        this->declare_parameter<bool>(base + "ack", false);
+        this->get_parameter(base + "ack", config_[type].msg[message].ack);
+
+        this->declare_parameter<int64_t>(base + "blackout_time", 0);
+        int64_t blackout64 = 0; this->get_parameter(base + "blackout_time", blackout64);
+        config_[type].msg[message].blackout_time = static_cast<int>(blackout64);
+
+        this->declare_parameter<int64_t>(base + "max_queue", 0);
+        int64_t maxq64 = 0; this->get_parameter(base + "max_queue", maxq64);
+        config_[type].msg[message].max_queue = static_cast<int>(maxq64);
+
+        this->declare_parameter<bool>(base + "newest_first", true);
+        this->get_parameter(base + "newest_first", config_[type].msg[message].newest_first);
+
+        this->declare_parameter<int64_t>(base + "ttl", 1800);
+        int64_t ttl64 = 1800; this->get_parameter(base + "ttl", ttl64);
+        config_[type].msg[message].ttl = static_cast<int>(ttl64);
+
+        this->declare_parameter<int64_t>(base + "value_base", 1);
+        int64_t vb64 = 1; this->get_parameter(base + "value_base", vb64);
+        config_[type].msg[message].value_base = static_cast<int>(vb64);
+
+        RCLCPP_INFO(this->get_logger(), "    %s:", message.c_str());
+        RCLCPP_INFO(this->get_logger(), "      ack: %s", config_[type].msg[message].ack ? "true" : "false");
+        RCLCPP_INFO(this->get_logger(), "      blackout_time: %d", config_[type].msg[message].blackout_time);
+        RCLCPP_INFO(this->get_logger(), "      max_queue: %d", config_[type].msg[message].max_queue);
+        RCLCPP_INFO(this->get_logger(), "      newest_first: %s", config_[type].msg[message].newest_first ? "true" : "false");
+        RCLCPP_INFO(this->get_logger(), "      ttl: %d", config_[type].msg[message].ttl);
+        RCLCPP_INFO(this->get_logger(), "      value_base: %d", config_[type].msg[message].value_base);
+        
+    }
+  }
 }

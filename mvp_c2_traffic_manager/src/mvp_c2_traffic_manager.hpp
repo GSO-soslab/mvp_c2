@@ -70,6 +70,7 @@ private:
     struct MacConfig
     {
         int local_address;
+        int local_slot_time;
         int max_frame_bytes;
         std::map<int, int> remotes; // remote address, slot time
     };
