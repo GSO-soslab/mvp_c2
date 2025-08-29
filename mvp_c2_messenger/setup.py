@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 import os
 from glob import glob
 
-package_name = 'mvp_c2'
+package_name = 'mvp_c2_messenger'
 
 setup(
     name=package_name,
@@ -21,8 +21,8 @@ setup(
 
         (os.path.join('share', package_name, 'launch'), glob('launch/*')),
         (os.path.join('share', package_name, 'config'), glob('config/*')),
-        (os.path.join('lib', package_name, 'include'), glob('mvp_c2/include/*')),
-        # (os.path.join('share', package_name, 'include'), glob('mvp_c2/include/*')),
+        (os.path.join('lib', package_name, 'include'), glob('mvp_c2_messenger/include/*')),
+        # (os.path.join('share', package_name, 'include'), glob('mvp_c2_messenger/include/*')),
         
 
     ],
@@ -36,11 +36,11 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'mvp_c2_reporter_ros = mvp_c2.mvp_c2_reporter_ros:main',
-            'mvp_c2_commander_ros = mvp_c2.mvp_c2_commander_ros:main',
-            'mvp_c2_udp_comm = mvp_c2.mvp_c2_udp_comm:main',
-            # 'mvp_c2_dccl_ros = mvp_c2.mvp_c2_dccl_ros:main',
-            'mvp_c2_serial_comm = mvp_c2.mvp_c2_serial_comm:main'
+            'mvp_c2_reporter_ros = mvp_c2_messenger.mvp_c2_reporter_ros:main',
+            'mvp_c2_commander_ros = mvp_c2_messenger.mvp_c2_commander_ros:main',
+            'mvp_c2_udp_comm = mvp_c2_messenger.mvp_c2_udp_comm:main',
+            # 'mvp_c2_dccl_ros = mvp_c2_messenger.mvp_c2_dccl_ros:main',
+            'mvp_c2_serial_comm = mvp_c2_messenger.mvp_c2_serial_comm:main'
         ],
     },
 )

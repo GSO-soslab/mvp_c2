@@ -1,0 +1,155 @@
+/mvp2_test_robot/mvp_c2_traffic_manager:
+  ros__parameters:
+
+    acomms:
+      mac:
+        local_address: 0
+        max_frame_bytes: 100
+        #Set the remote address's and coresponding slot times
+        remotes:
+          "1": 500
+          "2": 500
+          "4": 100
+
+
+      messages:
+        load: [
+          #select the subbuffer_id(s) to load to the dynamic buffer
+          "Joy",
+          "PWM",
+          "Odometry",
+          "GeoPose",
+          "PowerMonitor",
+          "CPUMonitor",
+          "SetPowerPort",
+          "ReportPowerPort",
+          "SetController",
+          "ReportController",
+          "SetHelm",
+          "ReportHelm",
+          "SetWpt",
+          "ReportWpt",
+          "ResetMission",
+          "RosLaunch",
+          "ReportRosLaunch"]
+
+        #buffer configuration (https://goby.software/3.0/md_doc101_acomms-queue.html)
+        Joy:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true 
+          ttl: 1800
+          value_base: 1
+        PWM:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        Odometry:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        GeoPose:
+          ack: false
+          blackout_time: 0
+          max_queue: 1               
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        PowerMonitor:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        CPUMonitor:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        SetPowerPort:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        ReportPowerPort:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        SetController:
+          ack: true
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        ReportController:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        SetHelm:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        ReportHelm:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        SetWpt:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        ReportWpt:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        ResetMission:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        RosLaunch:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: true
+          ttl: 1800
+          value_base: 1
+        ReportRosLaunch:
+          ack: false
+          blackout_time: 0
+          max_queue: 1
+          newest_first: false
+          ttl: 1800
+          value_base: 1
