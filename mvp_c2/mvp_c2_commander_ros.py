@@ -278,7 +278,7 @@ class MvpC2Commander(Node):
                     msg.header.stamp.sec = sec
                     msg.header.stamp.nanosec = nanosec
                     msg.point.z = proto_msg.data
-                    self.remote_cpu_info_pub.publish(msg)
+                    self.remote_altimeter_pub.publish(msg)
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)
