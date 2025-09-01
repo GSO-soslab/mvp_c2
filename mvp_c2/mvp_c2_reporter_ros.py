@@ -6,6 +6,7 @@ from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool, ByteMultiArray, Float32MultiArray
 from sensor_msgs.msg import Joy
+from geometry_msgs.msg import PointStamped
 # from mvp_msgs.srv import SetString
 from mvp_msgs.srv import ChangeState, GetState, GetWaypoints, SendWaypoints
 from mvp_msgs.msg import Waypoint
@@ -64,6 +65,7 @@ class MvpC2Reporter(Node):
         self.local_geopose_sub = self.create_subscription(GeoPoseStamped, 'local/geopose', self.geopose_callback, 10)
         self.power_vi_sub = self.create_subscription(Float32MultiArray, 'local/power_monitor', self.power_vi_callback,10)
         self.cpu_info_sub = self.create_subscription(Float32MultiArray, 'local/computer_info', self.cpu_info_callback,10)
+        self.altimeter_sub = self.create_subscription(PointStamped, 'local/altimeter', self.altimeter_callback, 10)
 
 
         #client for local controllers
@@ -111,6 +113,7 @@ class MvpC2Reporter(Node):
         self.local_report_gpio_tx_flag = False
         self.local_power_info_tx_flag = False
         self.local_cpu_info_tx_flag = False
+        self.local_altimeter_info_tx_flag = False
 
 
 
@@ -132,6 +135,8 @@ class MvpC2Reporter(Node):
         self.local_report_gpio_tx_flag = False
         self.local_power_info_tx_flag = False
         self.local_cpu_info_tx_flag = False
+        self.local_altimeter_info_tx_flag = False
+
 
 
     #######################################################
@@ -358,6 +363,19 @@ class MvpC2Reporter(Node):
         if self.local_cpu_info_tx_flag is False:
             self.publish_dccl(proto)
             self.local_cpu_info_tx_flag = True
+
+    #altimeter
+    def altimeter_callback(self, msg):
+        self.dccl_obj.load('AltimeterPointStamped')
+        proto = mvp_cmd_dccl_pb2.AltimeterPointStamped()
+        # proto.time = msg.header.stamp.to_sec()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.data = msg.point.z
+        if self.local_altimeter_info_tx_flag is False:
+            self.publish_dccl(proto)
+            self.local_altimeter_info_tx_flag = True
 
     def report_roslaunch_callback(self):
         if(self.local_report_roslaunch_tx_flag == False):

@@ -9,6 +9,8 @@ from sensor_msgs.msg import Joy
 from geographic_msgs.msg import GeoPath
 from mvp_msgs.srv import SetString, SendWaypoints
 from mvp_msgs.msg import HelmState, Waypoints, Waypoint
+from geometry_msgs.msg import PointStamped
+
 
 from std_srvs.srv import Trigger, SetBool
 from geographic_msgs.msg import GeoPoseStamped
@@ -70,6 +72,8 @@ class MvpC2Commander(Node):
         self.remote_gpio_power_report_pub = self.create_publisher(Int16MultiArray, topic_prefix+'/gpio_power_state',10)
         self.remote_power_info_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/power_info',10)
         self.remote_cpu_info_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/computer_info',10)
+        self.remote_altimeter_pub = self.create_publisher(PointStamped, topic_prefix + '/altimeter',10)
+
 
         self.local_joy_sub = self.create_subscription(Joy, topic_prefix + '/joy', self.joy_callback, 10)
 
@@ -258,6 +262,22 @@ class MvpC2Commander(Node):
                     #call the service and make the dccl msg
                     msg = Float32MultiArray()
                     msg.data = [proto_msg.data[0], proto_msg.data[1], proto_msg.data[2]]
+                    self.remote_cpu_info_pub.publish(msg)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
+            ##ALtimeter pointstamped
+            if message_id ==7:
+                try:
+                    self.dccl_obj.load('AltimeterPointStamped')
+                    proto_msg = self.dccl_obj.decode(data)
+                    msg = PointStamped()
+                    sec = int(proto_msg.time)  
+                    nanosec = int((proto_msg.time - sec) * 1e9)  
+                    msg.header.stamp.sec = sec
+                    msg.header.stamp.nanosec = nanosec
+                    msg.point.z = proto_msg.data
                     self.remote_cpu_info_pub.publish(msg)
                 except Exception as e:
                     # Print the exception message for debugging
