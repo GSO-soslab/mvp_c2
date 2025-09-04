@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 import threading
+import time
 
 from include.serial_interface import SerialInterface
 from std_msgs.msg import ByteMultiArray, UInt8MultiArray
@@ -54,6 +55,7 @@ class MvpC2SerialRos(Node):
                         break 
                     if counter == 5:
                         break
+                time.sleep(0.005) #delay 5 ms to save cpu
 
     def close_udp(self):
         self.running = False
