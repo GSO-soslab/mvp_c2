@@ -21,7 +21,7 @@ setup(
 
         (os.path.join('share', package_name, 'launch'), glob('launch/*')),
         (os.path.join('share', package_name, 'config'), glob('config/*')),
-        (os.path.join('lib', package_name, 'include'), glob('mvp_c2_messenger/include/*')),
+        (os.path.join('lib', package_name, 'include'), glob('include/*')),
         # (os.path.join('share', package_name, 'include'), glob('mvp_c2_messenger/include/*')),
         
 
