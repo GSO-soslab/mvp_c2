@@ -17,6 +17,8 @@
   <depend>std_srvs</depend>
   <depend>proto</depend>
   <depend>goby</depend>
+  <depend>yaml-cpp</depend>
+  <depend>ament_index_cpp</depend>
   <depend>dccl</depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>

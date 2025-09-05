@@ -43,6 +43,8 @@
 #include <goby/util/debug_logger/flex_ostream.h>         // for FlexOs...
 #include <goby/util/debug_logger/flex_ostreambuf.h>      // for DEBUG1
 
+#include <yaml-cpp/yaml.h>
+
 
 class MvpC2TrafficManager : public rclcpp::Node
 {
@@ -58,21 +60,14 @@ private:
     // types
     // ===================================================================== //
 
-    struct Interface
+    struct TdmaSlot
     {
-        std::string if_type;
-        std::string tcp_address;
-        int tcp_port;
-        std::string device;
-        int baudrate;
-    };
-
-    struct MacConfig
-    {
-        int local_address;
-        int local_slot_time;
+        int source;
+        int destination;
+        int slot_time;
         int max_frame_bytes;
-        std::map<int, int> remotes; // remote address, slot time
+        int max_num_frames;
+        int rate;
     };
 
     struct MessageConfig
@@ -87,8 +82,8 @@ private:
 
     struct Config
     {
-        MacConfig mac;
-        std::map<std::string, MessageConfig> msg;
+        int local_address;
+        std::unordered_map<std::string, MessageConfig> msg;
     };
 
 
@@ -98,16 +93,19 @@ private:
 
     std::thread loop_worker_;
 
-    std::map<std::string, Config> config_;
+    Config config_;
 
+    std::string comm_type_;
+
+    // std::map<std::string, goby::acomms::MACManager> mac_map_;
     goby::acomms::MACManager mac_;
 
-    goby::acomms::DynamicBuffer<std::string> buffer_;
+    goby::acomms::DynamicBuffer<std::vector<uint8_t>> buffer_;
 
     // ===================================================================== //
     // ROS2 related
     // ===================================================================== //
-
+    rclcpp::Subscription<std_msgs::msg::ByteMultiArray>::SharedPtr dccl_tx_sub_;
 
     // ===================================================================== //
     // functions
@@ -120,6 +118,10 @@ private:
      *
      */
     void loadConfig();
+    void parseTdmaFile();
+
+    void onDcclRx(const std_msgs::msg::ByteMultiArray::SharedPtr msg);
+    void initTransmission(const goby::acomms::protobuf::ModemTransmission& msg);
 
 
 };

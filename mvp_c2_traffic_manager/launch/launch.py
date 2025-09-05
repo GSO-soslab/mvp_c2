@@ -12,11 +12,6 @@ def generate_launch_description():
     # robot
     robot_name = 'mvp2_test_robot'
 
-    # param path
-    acomms_param = os.path.join(get_package_share_directory('mvp_c2_traffic_manager'), 'config', 'acomms.yaml')
-    serial_param = os.path.join(get_package_share_directory('mvp_c2_traffic_manager'), 'config', 'serial.yaml')
-    udp_param = os.path.join(get_package_share_directory('mvp_c2_traffic_manager'), 'config', 'udp.yaml')
-
     # launch the node
     return LaunchDescription([
 
@@ -28,11 +23,7 @@ def generate_launch_description():
             output='screen',
             prefix=['stdbuf -o L'],
             parameters=[
-                {'load_config': ["acomms"]},
-                acomms_param,
-                serial_param,
-                udp_param
-
+                {'type': "acomms"},
             ],
             # arguments=["--ros-args", "--log-level", "debug"],
         )

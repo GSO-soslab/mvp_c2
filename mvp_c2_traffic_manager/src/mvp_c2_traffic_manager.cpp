@@ -22,28 +22,55 @@
 */
 
 #include "mvp_c2_traffic_manager.hpp"
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 using goby::glog;
 using goby::util::as;
 
 using namespace std::chrono_literals;
 
+YAML::Node merge_maps(const YAML::Node& base, const YAML::Node& override_) {
+  YAML::Node out(YAML::NodeType::Map);
+
+  if (base && base.IsMap()) {
+    for (const auto& kv : base) {                           // const auto&
+      out[kv.first.Scalar()] = kv.second;
+    }
+  }
+
+  if (override_ && override_["<<"]) {
+    const YAML::Node m = override_["<<"];
+    if (m.IsMap()) {
+      for (const auto& kv : m) out[kv.first.Scalar()] = kv.second;
+    } else if (m.IsSequence()) {
+      for (const auto& elem : m) if (elem.IsMap())
+        for (const auto& kv : elem) out[kv.first.Scalar()] = kv.second;
+    }
+  }
+
+  if (override_ && override_.IsMap()) {
+    for (const auto& kv : override_) {
+      const std::string k = kv.first.Scalar();
+      if (k == "<<") continue;
+      out[k] = kv.second;
+    }
+  }
+  return out;
+}
+
+
 MvpC2TrafficManager::MvpC2TrafficManager(std::string name) : Node(name)
 {
-    RCLCPP_INFO(get_logger(), "MvpC2TraffficManager started!");
-
     // ===================================================================== //
     // setup param
     // ===================================================================== //
-
-    // parseGobyParams();
     loadConfig();
 
     // ===================================================================== //
     // ROS2 setup
     // ===================================================================== //
-
-    
+    dccl_tx_sub_ = this->create_subscription<std_msgs::msg::ByteMultiArray>(comm_type_ + "/tx_request", 10,
+        std::bind(&MvpC2TrafficManager::onDcclRx, this, std::placeholders::_1));
     // ===================================================================== //
     // setup main thread
     // ===================================================================== //
@@ -64,110 +91,163 @@ void MvpC2TrafficManager::loop()
 
     while (rclcpp::ok())
     {
-
+        buffer_.expire();
+        mac_.do_work();
         rate.sleep();
     }
 }
 
-void MvpC2TrafficManager::loadConfig() {
-  this->declare_parameter<std::vector<std::string>>("load_config", std::vector<std::string>{});
-  std::vector<std::string> configs;
-  this->get_parameter("load_config", configs);
 
-  for (const auto & type : configs) {
+void MvpC2TrafficManager::loadConfig()
+{
+    this->declare_parameter<std::string>("type", "");
+    this->get_parameter("type", comm_type_);
 
-    RCLCPP_INFO(this->get_logger(), "Loading config for '%s'", type.c_str());
+    RCLCPP_INFO(get_logger(),"%s MvpC2TraffficManager started!", comm_type_.c_str());
 
-    // prefer int64_t declarations for ints
-    this->declare_parameter<int64_t>(type + ".mac.local_address", 1);
-    this->get_parameter(type + ".mac.local_address", config_[type].mac.local_address);
+    // Load and parse the message config file
+    std::string msg_file = ament_index_cpp::get_package_share_directory("mvp_c2_traffic_manager") +
+                        "/config/traffic_manager.yaml";
 
-    this->declare_parameter<int64_t>(type + ".mac.local_slot_time", 30);
-    this->get_parameter(type + ".mac.local_slot_time", config_[type].mac.local_slot_time);
+    // Load and parse the corresponding tdma config file
+    std::string tdma_file = ament_index_cpp::get_package_share_directory("mvp_c2_traffic_manager") +
+                        "/config/tdma.yaml";
 
-    this->declare_parameter<int64_t>(type + ".mac.max_frame_bytes", 100);
-    this->get_parameter(type + ".mac.max_frame_bytes", config_[type].mac.max_frame_bytes);
 
-    RCLCPP_INFO(this->get_logger(), "  local_address: %d", config_[type].mac.local_address);
-    RCLCPP_INFO(this->get_logger(), "  local_slot_time: %d", config_[type].mac.local_slot_time);
-    RCLCPP_INFO(this->get_logger(), "  max_frame_bytes: %d", config_[type].mac.max_frame_bytes);
+    RCLCPP_INFO(this->get_logger(), "Loading config files: %s & %s", msg_file.c_str(), tdma_file.c_str());
+    //load the config file
+    YAML::Node msg_root = YAML::LoadFile(msg_file);
+    YAML::Node tdma_root = YAML::LoadFile(tdma_file);
 
-    RCLCPP_INFO(this->get_logger(), "  Remotes:");
+    // parse the message config file
+    try
+    {
+        YAML::Node node = msg_root["traffic_manager"][comm_type_];
 
-    // ----- remotes dict: <type>.mac.remotes.<key> = <value> -----
-    const std::string prefix = type + ".mac.remotes";
-    auto pif = this->get_node_parameters_interface();
-    const auto & overrides = pif->get_parameter_overrides(); // name -> ParameterValue
-
-    // declare each remote so list/get will see them
-    for (const auto & kv : overrides) {
-    if (kv.first.rfind(prefix, 0) == 0 && !this->has_parameter(kv.first)) {
-        this->declare_parameter<int64_t>(kv.first, 0);
-    }
-    }
-
-    auto listed = pif->list_parameters({prefix}, /*depth=*/1);
-    auto params = pif->get_parameters(listed.names);  // <-- fixed overload
-
-    std::map<int,int> remotes;
-    const std::string dot = prefix + ".";
-    for (const auto & p : params) {
-      const std::string & full = p.get_name();            // e.g. "acomms.mac.remotes.1"
-      if (full.rfind(dot, 0) != 0) continue;
-      const std::string suffix = full.substr(dot.size()); // "1"
-      try {
-        int key = std::stoi(suffix);
-        int val = static_cast<int>(p.as_int());           // int64 -> int
-        remotes.emplace(key, val);
-      } catch (const std::exception & e) {
-        RCLCPP_WARN(this->get_logger(), "Skip '%s': %s", full.c_str(), e.what());
-      }
-    }
-    config_[type].mac.remotes = std::move(remotes);
-
-    for(const auto & r : config_[type].mac.remotes) {
-      RCLCPP_INFO(this->get_logger(), "    address %d: slot time %d", r.first, r.second);
-    }
-
-    // ----- messages -----
-    RCLCPP_INFO(this->get_logger(), "  Messages:");
-    this->declare_parameter<std::vector<std::string>>(type + ".messages.load",
-                                                      std::vector<std::string>{});
-    std::vector<std::string> messages;
-    this->get_parameter(type + ".messages.load", messages);
-
-    for (const auto & message : messages) {
-        const std::string base = type + ".messages." + message + ".";
-        this->declare_parameter<bool>(base + "ack", false);
-        this->get_parameter(base + "ack", config_[type].msg[message].ack);
-
-        this->declare_parameter<int64_t>(base + "blackout_time", 0);
-        int64_t blackout64 = 0; this->get_parameter(base + "blackout_time", blackout64);
-        config_[type].msg[message].blackout_time = static_cast<int>(blackout64);
-
-        this->declare_parameter<int64_t>(base + "max_queue", 0);
-        int64_t maxq64 = 0; this->get_parameter(base + "max_queue", maxq64);
-        config_[type].msg[message].max_queue = static_cast<int>(maxq64);
-
-        this->declare_parameter<bool>(base + "newest_first", true);
-        this->get_parameter(base + "newest_first", config_[type].msg[message].newest_first);
-
-        this->declare_parameter<int64_t>(base + "ttl", 1800);
-        int64_t ttl64 = 1800; this->get_parameter(base + "ttl", ttl64);
-        config_[type].msg[message].ttl = static_cast<int>(ttl64);
-
-        this->declare_parameter<int64_t>(base + "value_base", 1);
-        int64_t vb64 = 1; this->get_parameter(base + "value_base", vb64);
-        config_[type].msg[message].value_base = static_cast<int>(vb64);
-
-        RCLCPP_INFO(this->get_logger(), "    %s:", message.c_str());
-        RCLCPP_INFO(this->get_logger(), "      ack: %s", config_[type].msg[message].ack ? "true" : "false");
-        RCLCPP_INFO(this->get_logger(), "      blackout_time: %d", config_[type].msg[message].blackout_time);
-        RCLCPP_INFO(this->get_logger(), "      max_queue: %d", config_[type].msg[message].max_queue);
-        RCLCPP_INFO(this->get_logger(), "      newest_first: %s", config_[type].msg[message].newest_first ? "true" : "false");
-        RCLCPP_INFO(this->get_logger(), "      ttl: %d", config_[type].msg[message].ttl);
-        RCLCPP_INFO(this->get_logger(), "      value_base: %d", config_[type].msg[message].value_base);
+        RCLCPP_INFO(this->get_logger(),"%s:", comm_type_.c_str());
+        RCLCPP_INFO(this->get_logger(), "  local_address: %d", node["local_address"].as<int>());
         
+        config_.local_address = node["local_address"].as<int>();
+
+        for (const auto & msg : node["messages"]) {
+            const std::string message = msg.first.as<std::string>();
+            config_.msg[message].ack = msg.second["ack"].as<bool>(false);
+            config_.msg[message].blackout_time = msg.second["blackout_time"].as<int>(0);
+            config_.msg[message].max_queue = msg.second["max_queue"].as<int>(0);
+            config_.msg[message].newest_first = msg.second["newest_first"].as<bool>(true);
+            config_.msg[message].ttl = msg.second["ttl"].as<int>(1800);
+            config_.msg[message].value_base = msg.second["value_base"].as<int>(1);
+
+            RCLCPP_INFO(this->get_logger(), "  Message: %s", message.c_str());
+            RCLCPP_INFO(this->get_logger(), "    ack: %s", config_.msg[message].ack ? "true" : "false");
+            RCLCPP_INFO(this->get_logger(), "    blackout_time: %d", config_.msg[message].blackout_time);
+            RCLCPP_INFO(this->get_logger(), "    max_queue: %d", config_.msg[message].max_queue);
+            RCLCPP_INFO(this->get_logger(), "    newest_first: %s", config_.msg[message].newest_first ? "true" : "false");
+            RCLCPP_INFO(this->get_logger(), "    ttl: %d", config_.msg[message].ttl);
+            RCLCPP_INFO(this->get_logger(), "    value_base: %d", config_.msg[message].value_base);
+        }
     }
-  }
+    catch (const YAML::Exception & e) 
+    {
+        RCLCPP_ERROR(this->get_logger(), "Failed to load config file: %s", e.what());
+    }
+
+    // parse the tdma config file
+    std::vector<TdmaSlot> schedule;    
+    try
+    {
+        YAML::Node tdma     = tdma_root["tdma"];
+        YAML::Node defaults = tdma["default"];
+        YAML::Node slots    = tdma[comm_type_]["slots"];
+
+        for (const auto& item : slots) {
+            YAML::Node merged = merge_maps(defaults, item);
+            TdmaSlot s{
+            merged["source"].as<int>(),
+            merged["destination"].as<int>(),
+            merged["slot_time"].as<int>(),
+            merged["max_frame_bytes"].as<int>(),
+            merged["max_num_frames"].as<int>(),
+            merged["rate"].as<int>()
+            };
+            schedule.push_back(s);
+        }
+    } 
+    catch (const YAML::Exception & e) 
+    {
+        RCLCPP_ERROR(this->get_logger(), "Failed to load %s TDMA config file: %s", comm_type_.c_str(), e.what());
+    }
+
+    goby::acomms::protobuf::MACConfig cfg;
+    cfg.set_modem_id(config_.local_address);
+    cfg.set_type(goby::acomms::protobuf::MAC_FIXED_DECENTRALIZED);
+    goby::acomms::connect(&mac_.signal_initiate_transmission, this, &MvpC2TrafficManager::initTransmission);
+    
+    for (const auto& s : schedule) {
+        std::cout << comm_type_
+                    << " TDMA slot: src=" << s.source
+                    << " dst=" << s.destination
+                    << " time=" << s.slot_time
+                    << " bytes=" << s.max_frame_bytes
+                    << " frames=" << s.max_num_frames
+                    << " rate=" << s.rate << "\n";
+
+
+        goby::acomms::protobuf::ModemTransmission* slot = cfg.add_slot();
+        slot->set_src(s.source);
+        slot->set_dest(s.destination);
+        slot->set_rate(s.rate);
+        slot->set_type(goby::acomms::protobuf::ModemTransmission::DATA);
+        slot->set_slot_seconds(s.slot_time);
+        slot->set_max_frame_bytes(s.max_frame_bytes);
+        slot->set_max_num_frames(s.max_num_frames);
+        mac_.push_back(*slot);
+
+        if(s.source == config_.local_address) {
+            // Add a dynamic buffer for each remote address we transmit to
+            goby::acomms::protobuf::DynamicBufferConfig buffer_cfg;
+
+            for (const auto & msg : config_.msg)
+            {
+                buffer_cfg.set_ack_required(msg.second.ack);
+                buffer_cfg.set_blackout_time(msg.second.blackout_time);
+                buffer_cfg.set_max_queue(msg.second.max_queue);
+                buffer_cfg.set_newest_first(msg.second.newest_first);
+                buffer_cfg.set_ttl(msg.second.ttl);
+                buffer_cfg.set_value_base(msg.second.value_base);
+
+                buffer_.create(s.destination, msg.first, buffer_cfg);
+
+                buffer_cfg.Clear();
+
+            }
+        }
+
+    }
+
+    mac_.startup(cfg);
+
+}
+
+void MvpC2TrafficManager::onDcclRx(const std_msgs::msg::ByteMultiArray::SharedPtr msg)
+{
+    std::cout << "received dccl message of size: " << msg->data.size() << std::endl;
+}
+
+
+void MvpC2TrafficManager::initTransmission(const goby::acomms::protobuf::ModemTransmission& msg)
+{
+    std::cout << "starting transmission with these values: " << msg.ShortDebugString() << std::endl;
+
+    try
+    {
+        auto out = buffer_.top(msg.dest());
+    }
+    catch(const std::exception& e)
+    {
+        RCLCPP_INFO(this->get_logger(), "No %s data to send from %d to %d", comm_type_.c_str(), msg.src(), msg.dest());
+    }
+    
+    
+       
 }

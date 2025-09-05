@@ -13,11 +13,15 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
 ## Find ROS 2 packages
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_components REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(goby 3.1 REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 include_directories(${CMAKE_BINARY_DIR})
 
@@ -26,12 +30,15 @@ include_directories(${CMAKE_BINARY_DIR})
 ####################################################################
 
 set(ros_lib
-  rclcpp 
+  rclcpp
+  rclcpp_components
+  ament_index_cpp
   std_msgs 
 )
 
 set(other_lib
   goby
+  yaml-cpp
 )
 
 set(executable_name mvp_c2_traffic_manager)
