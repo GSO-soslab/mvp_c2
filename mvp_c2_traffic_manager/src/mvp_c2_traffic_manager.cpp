@@ -69,8 +69,11 @@ MvpC2TrafficManager::MvpC2TrafficManager(std::string name) : Node(name)
     // ===================================================================== //
     // ROS2 setup
     // ===================================================================== //
-    dccl_tx_sub_ = this->create_subscription<std_msgs::msg::ByteMultiArray>(comm_type_ + "/tx_request", 10,
-        std::bind(&MvpC2TrafficManager::onDcclRx, this, std::placeholders::_1));
+    tx_req_sub_ = this->create_subscription<std_msgs::msg::ByteMultiArray>(config_.comm_type + "/tx_request", 10,
+        std::bind(&MvpC2TrafficManager::onTxRequest, this, std::placeholders::_1));
+
+    modem_tx_pub_ = this->create_publisher<std_msgs::msg::ByteMultiArray>(config_.comm_type + "tx", 10);
+    
     // ===================================================================== //
     // setup main thread
     // ===================================================================== //
@@ -101,9 +104,9 @@ void MvpC2TrafficManager::loop()
 void MvpC2TrafficManager::loadConfig()
 {
     this->declare_parameter<std::string>("type", "");
-    this->get_parameter("type", comm_type_);
+    this->get_parameter("type", config_.comm_type);
 
-    RCLCPP_INFO(get_logger(),"%s MvpC2TraffficManager started!", comm_type_.c_str());
+    RCLCPP_INFO(get_logger(),"%s MvpC2TraffficManager started!", config_.comm_type.c_str());
 
     // Load and parse the message config file
     std::string msg_file = ament_index_cpp::get_package_share_directory("mvp_c2_traffic_manager") +
@@ -122,9 +125,9 @@ void MvpC2TrafficManager::loadConfig()
     // parse the message config file
     try
     {
-        YAML::Node node = msg_root["traffic_manager"][comm_type_];
+        YAML::Node node = msg_root["traffic_manager"][config_.comm_type];
 
-        RCLCPP_INFO(this->get_logger(),"%s:", comm_type_.c_str());
+        RCLCPP_INFO(this->get_logger(),"%s:", config_.comm_type.c_str());
         RCLCPP_INFO(this->get_logger(), "  local_address: %d", node["local_address"].as<int>());
         
         config_.local_address = node["local_address"].as<int>();
@@ -158,7 +161,7 @@ void MvpC2TrafficManager::loadConfig()
     {
         YAML::Node tdma     = tdma_root["tdma"];
         YAML::Node defaults = tdma["default"];
-        YAML::Node slots    = tdma[comm_type_]["slots"];
+        YAML::Node slots    = tdma[config_.comm_type]["slots"];
 
         for (const auto& item : slots) {
             YAML::Node merged = merge_maps(defaults, item);
@@ -175,7 +178,7 @@ void MvpC2TrafficManager::loadConfig()
     } 
     catch (const YAML::Exception & e) 
     {
-        RCLCPP_ERROR(this->get_logger(), "Failed to load %s TDMA config file: %s", comm_type_.c_str(), e.what());
+        RCLCPP_ERROR(this->get_logger(), "Failed to load %s TDMA config file: %s", config_.comm_type.c_str(), e.what());
     }
 
     goby::acomms::protobuf::MACConfig cfg;
@@ -184,7 +187,7 @@ void MvpC2TrafficManager::loadConfig()
     goby::acomms::connect(&mac_.signal_initiate_transmission, this, &MvpC2TrafficManager::initTransmission);
     
     for (const auto& s : schedule) {
-        std::cout << comm_type_
+        std::cout << config_.comm_type
                     << " TDMA slot: src=" << s.source
                     << " dst=" << s.destination
                     << " time=" << s.slot_time
@@ -229,7 +232,7 @@ void MvpC2TrafficManager::loadConfig()
 
 }
 
-void MvpC2TrafficManager::onDcclRx(const std_msgs::msg::ByteMultiArray::SharedPtr msg)
+void MvpC2TrafficManager::onTxRequest(const std_msgs::msg::ByteMultiArray::SharedPtr msg)
 {
     std::cout << "received dccl message of size: " << msg->data.size() << std::endl;
 }
@@ -245,7 +248,7 @@ void MvpC2TrafficManager::initTransmission(const goby::acomms::protobuf::ModemTr
     }
     catch(const std::exception& e)
     {
-        RCLCPP_INFO(this->get_logger(), "No %s data to send from %d to %d", comm_type_.c_str(), msg.src(), msg.dest());
+        RCLCPP_INFO(this->get_logger(), "No %s data to send from %d to %d", config_.comm_type.c_str(), msg.src(), msg.dest());
     }
     
     

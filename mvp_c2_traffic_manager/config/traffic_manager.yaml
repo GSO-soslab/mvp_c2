@@ -1,6 +1,6 @@
 traffic_manager:
   acomms:
-    local_address: 1
+    local_address: 2
 
     messages:
       #buffer configuration (https://goby.software/3.0/md_doc101_acomms-queue.html)

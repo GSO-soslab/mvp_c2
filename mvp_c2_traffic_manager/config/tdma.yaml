@@ -3,7 +3,7 @@ tdma:
     source: 1
     destination: 2
     slot_time: 5
-    max_frame_bytes: 100
+    max_frame_bytes: 32
     max_num_frames: 1
     rate: 0
 
@@ -12,23 +12,10 @@ tdma:
       - <<: *tdma
         source: 1
         destination: 2
+        slot_time: 10
 
       - <<: *tdma
         source: 2
         destination: 1
-
-      - <<: *tdma
-        source: 1
-        destination: 3
-
-      - <<: *tdma
-        source: 3
-        destination: 1
-
-      - <<: *tdma
-        source: 2
-        destination: 3
-
-      - <<: *tdma
-        source: 3
-        destination: 2
+        max_frame_bytes: 256
+        slot_time: 30

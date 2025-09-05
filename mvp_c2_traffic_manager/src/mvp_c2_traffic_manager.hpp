@@ -59,7 +59,6 @@ private:
     // ===================================================================== //
     // types
     // ===================================================================== //
-
     struct TdmaSlot
     {
         int source;
@@ -82,6 +81,7 @@ private:
 
     struct Config
     {
+        std::string comm_type;
         int local_address;
         std::unordered_map<std::string, MessageConfig> msg;
     };
@@ -90,22 +90,18 @@ private:
     // ===================================================================== //
     // global variables
     // ===================================================================== //
-
-    std::thread loop_worker_;
-
     Config config_;
 
-    std::string comm_type_;
-
-    // std::map<std::string, goby::acomms::MACManager> mac_map_;
     goby::acomms::MACManager mac_;
-
     goby::acomms::DynamicBuffer<std::vector<uint8_t>> buffer_;
+
+    std::thread loop_worker_;
 
     // ===================================================================== //
     // ROS2 related
     // ===================================================================== //
-    rclcpp::Subscription<std_msgs::msg::ByteMultiArray>::SharedPtr dccl_tx_sub_;
+    rclcpp::Subscription<std_msgs::msg::ByteMultiArray>::SharedPtr tx_req_sub_;
+    rclcpp::Publisher<std_msgs::msg::ByteMultiArray>::SharedPtr modem_tx_pub_;
 
     // ===================================================================== //
     // functions
@@ -118,9 +114,8 @@ private:
      *
      */
     void loadConfig();
-    void parseTdmaFile();
 
-    void onDcclRx(const std_msgs::msg::ByteMultiArray::SharedPtr msg);
+    void onTxRequest(const std_msgs::msg::ByteMultiArray::SharedPtr msg);
     void initTransmission(const goby::acomms::protobuf::ModemTransmission& msg);
 
 
