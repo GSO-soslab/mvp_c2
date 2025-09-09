@@ -23,23 +23,27 @@ def check_dccl(data):
             return flag, data_out
         #get checksum string
         elif(len(data)<7):
-             print ("Data is not long enough")
+             print ("Data is not long enough", flush=True)
              return flag, data_out
         else:
-            checksum_str = bytes([data[-3], data[-2]]).decode('ascii')
-            #compute checksum
-            calculated_checksum = 0
-            for byte in data[3:-4]: 
-                calculated_checksum ^= byte
-            # Format the checksum 
-            calculated_checksum_str = f"{calculated_checksum:02X}"
-            
-            #compare checksum with the calculated checksum
-            if calculated_checksum_str == checksum_str:
-                # print("Data is complete and valid.")
-                data_extracted = data[3:-4]
-                data_out = bytes(data_extracted)
-                flag = True
-            else:
-                print("Error: Checksum does not match")
+            try:
+                checksum_str = bytes([data[-3], data[-2]]).decode('ascii')
+                #compute checksum
+                calculated_checksum = 0
+                for byte in data[3:-4]: 
+                    calculated_checksum ^= byte
+                # Format the checksum 
+                calculated_checksum_str = f"{calculated_checksum:02X}"
+                
+                #compare checksum with the calculated checksum
+                if calculated_checksum_str == checksum_str:
+                    # print("Data is complete and valid.")
+                    data_extracted = data[3:-4]
+                    data_out = bytes(data_extracted)
+                    flag = True
+                else:
+                    print("Error: Checksum does not match",flush=True)
+
+            except (IndexError, UnicodeDecodeError) as e:
+               print(f"Error while parsing checksum: {e}, Raw bytes (hex): {bytes([data[-3], data[-2]]).hex(' ').upper()}", flush=True)
         return flag, data_out
