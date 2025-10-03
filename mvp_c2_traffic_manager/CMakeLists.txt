@@ -18,6 +18,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(mvp_c2_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(goby 3.1 REQUIRED)
@@ -33,7 +34,8 @@ set(ros_lib
   rclcpp
   rclcpp_components
   ament_index_cpp
-  std_msgs 
+  std_msgs
+  mvp_c2_msgs
 )
 
 set(other_lib

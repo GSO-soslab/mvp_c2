@@ -26,7 +26,7 @@ setup(
         
 
     ],
-    install_requires=['setuptools', 'std_msgs','nav_msgs', 'dccl'],
+    install_requires=['setuptools', 'std_msgs', 'nav_msgs', 'dccl'],
     zip_safe=True,
     # py_modules=['dccl_checksum'],
     maintainer='mingxi',

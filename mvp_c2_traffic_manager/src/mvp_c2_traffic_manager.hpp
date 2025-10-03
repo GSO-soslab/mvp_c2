@@ -28,6 +28,7 @@
 
 // ros2 standard 
 #include <rclcpp/rclcpp.hpp>
+#include <mvp_c2_msgs/msg/dccl_msg.hpp>
 #include <std_msgs/msg/byte_multi_array.hpp>
 
 
@@ -100,7 +101,7 @@ private:
     // ===================================================================== //
     // ROS2 related
     // ===================================================================== //
-    rclcpp::Subscription<std_msgs::msg::ByteMultiArray>::SharedPtr tx_req_sub_;
+    rclcpp::Subscription<mvp_c2_msgs::msg::DcclMsg>::SharedPtr tx_req_sub_;
     rclcpp::Publisher<std_msgs::msg::ByteMultiArray>::SharedPtr modem_tx_pub_;
 
     // ===================================================================== //
@@ -115,7 +116,7 @@ private:
      */
     void loadConfig();
 
-    void onTxRequest(const std_msgs::msg::ByteMultiArray::SharedPtr msg);
+    void onTxRequest(const mvp_c2_msgs::msg::DcclMsg::SharedPtr msg);
     void initTransmission(const goby::acomms::protobuf::ModemTransmission& msg);
 
 

@@ -15,7 +15,6 @@
     along with the project.  If not, see <https://www.gnu.org/licenses/>.
 
     Author: Jason Miller, jason_miller@uri.edu
-    Author: Lin Zhao, linzhao@uri.edu
     Year: 2023-2024
 
     Copyright (C) 2023-2024 Smart Ocean Systems Laboratory
@@ -69,10 +68,10 @@ MvpC2TrafficManager::MvpC2TrafficManager(std::string name) : Node(name)
     // ===================================================================== //
     // ROS2 setup
     // ===================================================================== //
-    tx_req_sub_ = this->create_subscription<std_msgs::msg::ByteMultiArray>(config_.comm_type + "/tx_request", 10,
+    tx_req_sub_ = this->create_subscription<mvp_c2_msgs::msg::DcclMsg>("mvp_c2/" + config_.comm_type + "/tx_request", 10,
         std::bind(&MvpC2TrafficManager::onTxRequest, this, std::placeholders::_1));
 
-    modem_tx_pub_ = this->create_publisher<std_msgs::msg::ByteMultiArray>(config_.comm_type + "tx", 10);
+    modem_tx_pub_ = this->create_publisher<std_msgs::msg::ByteMultiArray>("mvp_c2/" + config_.comm_type + "/tx", 10);
     
     // ===================================================================== //
     // setup main thread
@@ -100,22 +99,24 @@ void MvpC2TrafficManager::loop()
     }
 }
 
-
 void MvpC2TrafficManager::loadConfig()
 {
     this->declare_parameter<std::string>("type", "");
     this->get_parameter("type", config_.comm_type);
 
+    std::string filename;
+    this->declare_parameter<std::string>("config", "");
+    this->get_parameter("config", filename);
+
     RCLCPP_INFO(get_logger(),"%s MvpC2TraffficManager started!", config_.comm_type.c_str());
 
     // Load and parse the message config file
     std::string msg_file = ament_index_cpp::get_package_share_directory("mvp_c2_traffic_manager") +
-                        "/config/traffic_manager.yaml";
+                        "/config/" + filename + "_traffic_manager.yaml";
 
     // Load and parse the corresponding tdma config file
     std::string tdma_file = ament_index_cpp::get_package_share_directory("mvp_c2_traffic_manager") +
                         "/config/tdma.yaml";
-
 
     RCLCPP_INFO(this->get_logger(), "Loading config files: %s & %s", msg_file.c_str(), tdma_file.c_str());
     //load the config file
@@ -232,25 +233,47 @@ void MvpC2TrafficManager::loadConfig()
 
 }
 
-void MvpC2TrafficManager::onTxRequest(const std_msgs::msg::ByteMultiArray::SharedPtr msg)
+void MvpC2TrafficManager::onTxRequest(const mvp_c2_msgs::msg::DcclMsg::SharedPtr msg)
 {
-    std::cout << "received dccl message of size: " << msg->data.size() << std::endl;
+    std::string debug(msg->data.begin(), msg->data.end());
+    // std::cout << "Received dccl message:" <<std::endl << "Type: " << msg->type << std::endl << "Size: " << msg->data.size() << std::endl << "Data: " << goby::util::hex_encode(debug) << std::endl <<std::endl;
+    buffer_.push({msg->dest, msg->type, goby::time::SteadyClock::now(), msg->data});
 }
 
 
 void MvpC2TrafficManager::initTransmission(const goby::acomms::protobuf::ModemTransmission& msg)
 {
     std::cout << "starting transmission with these values: " << msg.ShortDebugString() << std::endl;
+    std::vector<uint8_t> frame;
 
-    try
+    while(frame.size() < msg.max_frame_bytes())
     {
-        auto out = buffer_.top(msg.dest());
+        try
+        {
+            auto out = buffer_.top(msg.dest(), msg.max_frame_bytes() - frame.size());
+            frame.insert(frame.end(), out.data.begin(), out.data.end());
+            buffer_.erase(out);
+
+            std::string debug(out.data.begin(), out.data.end());
+            RCLCPP_INFO(this->get_logger(), "Adding %s message of size: %ld to frame with total size: %ld with data: %s", 
+                out.subbuffer_id.c_str(), out.data.size(), frame.size(), goby::util::hex_encode(debug).c_str());
+        }
+        catch (goby::acomms::DynamicBufferNoDataException &)
+        {
+            if(frame.size() == 0)
+            {
+                RCLCPP_INFO(this->get_logger(), "No %s data to send from %d to %d", config_.comm_type.c_str(), msg.src(), msg.dest());
+                return;
+            }
+            else
+            {
+                RCLCPP_INFO(this->get_logger(), "Frame filled with %ld bytes", frame.size());
+                std_msgs::msg::ByteMultiArray transmit;
+                transmit.data = frame;
+                modem_tx_pub_->publish(transmit);
+
+                return;
+            }
+        }
     }
-    catch(const std::exception& e)
-    {
-        RCLCPP_INFO(this->get_logger(), "No %s data to send from %d to %d", config_.comm_type.c_str(), msg.src(), msg.dest());
-    }
-    
-    
-       
 }

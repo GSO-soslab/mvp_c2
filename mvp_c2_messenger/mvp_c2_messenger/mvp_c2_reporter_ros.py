@@ -5,6 +5,7 @@ import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool, ByteMultiArray, Float32MultiArray
+from mvp_c2_msgs.msg import DcclMsg
 from sensor_msgs.msg import Joy
 # from mvp_msgs.srv import SetString
 from mvp_msgs.srv import ChangeState, GetState, GetWaypoints, SendWaypoints
@@ -22,7 +23,7 @@ import mvp_cmd_dccl_pb2
 import time 
 from ament_index_python.packages import get_package_share_directory
 
-package_name = 'mvp_c2'
+package_name = 'mvp_c2_messenger'
 
 # Full path to the config file
 
@@ -87,7 +88,7 @@ class MvpC2Reporter(Node):
         self.local_joy_pub = self.create_publisher(Joy, 'joy', 10)
 
         #DCCL byte array topic
-        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/dccl_msg_tx', 10)
+        self.ddcl_reporter_pub = self.create_publisher(DcclMsg, 'mvp_c2/dccl_msg_tx', 10)
         
         self.dccl_reporter_sub = self.create_subscription(ByteMultiArray, 
                                                         'mvp_c2/dccl_msg_rx', 
@@ -268,8 +269,10 @@ class MvpC2Reporter(Node):
                     print(f"Decoding error: {e}", flush=True)
     ##publish dccl 
     def publish_dccl(self, proto):
-        dccl_msg = ByteMultiArray()
+        dccl_msg = DcclMsg()
         dccl_msg.data = self.dccl_obj.encode(proto)
+        dccl_msg.type = proto.DESCRIPTOR.name
+        dccl_msg.dest = self.remote_id
         dccl_msg.data = package_dccl(dccl_msg.data)
         self.ddcl_reporter_pub.publish(dccl_msg)
         return True

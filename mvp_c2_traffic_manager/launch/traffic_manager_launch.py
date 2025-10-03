@@ -24,6 +24,7 @@ def generate_launch_description():
             prefix=['stdbuf -o L'],
             parameters=[
                 {'type': "acomms"},
+                {'config': "vehicle"}
             ],
             # arguments=["--ros-args", "--log-level", "debug"],
         )

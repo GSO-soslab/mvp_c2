@@ -18,4 +18,4 @@ tdma:
         source: 2
         destination: 1
         max_frame_bytes: 256
-        slot_time: 30
+        slot_time: 10
