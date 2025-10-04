@@ -64,6 +64,8 @@ class MvpC2Commander(Node):
         topic_prefix = 'remote/id_' + str(self.remote_id)
         self.remote_odom_pub = self.create_publisher(Odometry, topic_prefix + '/odometry', 10)
         self.remote_geopose_pub = self.create_publisher(GeoPoseStamped, topic_prefix + '/geopose', 10)
+        self.remote_acomm_geopoint_pub = self.create_publisher(NavSatFix, topic_prefix + '/acomm/navsatfix', 10)
+
         self.remote_odom_navsat_pub = self.create_publisher(NavSatFix, topic_prefix + '/odometry/navsatfix', 10)
         self.remote_controller_state_pub = self.create_publisher(Bool, topic_prefix + '/controller_state', 10)
         self.remote_helm_state_pub = self.create_publisher(HelmState, topic_prefix + '/helm/state', 10)
@@ -279,6 +281,29 @@ class MvpC2Commander(Node):
                     msg.header.stamp.nanosec = nanosec
                     msg.point.z = proto_msg.data
                     self.remote_altimeter_pub.publish(msg)
+                except Exception as e:
+                    # Print the exception message for debugging
+                    print(f"Decoding error: {e}", flush=True)
+
+
+            ##acomm geopoint pointstamped
+            if message_id ==8:
+                try:
+                    self.dccl_obj.load('AcommGeoPoint')
+                    proto_msg = self.dccl_obj.decode(data)
+                    msg = NavSatFix()
+                    sec = int(proto_msg.time)  
+                    nanosec = int((proto_msg.time - sec) * 1e9)  
+                    msg.header.stamp.sec = sec
+                    msg.header.stamp.nanosec = nanosec
+                    msg.status.status = 0
+                    msg.status.service = 1
+                    msg.latitude =  proto_msg.latitude*0.01
+                    msg.longitude = proto_msg.longitude*0.01
+                    msg.altitude = proto_msg.altitude
+                    msg.position_covariance_type = 1
+                    self.remote_acomm_geopoint_pub.publish(msg)
+
                 except Exception as e:
                     # Print the exception message for debugging
                     print(f"Decoding error: {e}", flush=True)

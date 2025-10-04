@@ -12,7 +12,7 @@ from mvp_msgs.srv import ChangeState, GetState, GetWaypoints, SendWaypoints
 from mvp_msgs.msg import Waypoint
 
 from std_srvs.srv import Trigger, SetBool
-from geographic_msgs.msg import GeoPoseStamped
+from geographic_msgs.msg import GeoPoseStamped, GeoPointStamped
 # from mvp_msgs.srv import GetControlMode
 
 from include.dccl_checksum import check_dccl, package_dccl
@@ -63,6 +63,7 @@ class MvpC2Reporter(Node):
         
         self.local_odom_sub = self.create_subscription(Odometry, 'local/odometry', self.odom_callback, 10)
         self.local_geopose_sub = self.create_subscription(GeoPoseStamped, 'local/geopose', self.geopose_callback, 10)
+        self.local_acomm_geopoint_sub = self.create_subscription(GeoPointStamped, 'local/acomm_geopoint', self.acomm_geopoint_callback, 10)
         self.power_vi_sub = self.create_subscription(Float32MultiArray, 'local/power_monitor', self.power_vi_callback,10)
         self.cpu_info_sub = self.create_subscription(Float32MultiArray, 'local/computer_info', self.cpu_info_callback,10)
         self.altimeter_sub = self.create_subscription(PointStamped, 'local/altimeter', self.altimeter_callback, 10)
@@ -106,6 +107,8 @@ class MvpC2Reporter(Node):
         ##timer for resetting the dccl tx flag
         self.local_odom_tx_flag = False
         self.local_geopose_tx_flag = False
+        self.local_acomm_geopoint_tx_flag = False
+
         self.local_report_controller_state_tx_flag = False
         self.local_report_helm_state_tx_flag = False
         self.local_report_wpt_tx_flag = False
@@ -128,6 +131,8 @@ class MvpC2Reporter(Node):
     def reset_dccl_tx_flag(self):
         self.local_odom_tx_flag = False
         self.local_geopose_tx_flag = False
+        self.local_acomm_geopoint_tx_flag = False
+
         self.local_report_controller_state_tx_flag = False
         self.local_report_helm_state_tx_flag = False
         self.local_report_wpt_tx_flag = False
@@ -337,6 +342,22 @@ class MvpC2Reporter(Node):
         if self.local_geopose_tx_flag is False:
             self.publish_dccl(proto)
             self.local_geopose_tx_flag = True
+
+    #acomm geopose topic (from usbl)
+    def acomm_geopoint_callback(self, msg):
+        # print("got acom_geopose")
+        self.dccl_obj.load('AcommGeoPoint')
+        proto = mvp_cmd_dccl_pb2.AcommGeoPoint()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.latitude = msg.position.latitude*100
+        proto.longitude = msg.position.longitude*100
+        proto.altitude = msg.position.altitude
+            
+        if self.local_acomm_geopoint_tx_flag is False:
+            self.publish_dccl(proto)
+            self.local_acomm_geopoint_tx_flag = True
 
     #power monitor
     def power_vi_callback(self, msg):

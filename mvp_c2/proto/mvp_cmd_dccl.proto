@@ -85,6 +85,19 @@ message AltimeterPointStamped{
     required double data = 4 [ (dccl.field) = {min: -100.0 max: 100.0 precision:1} ];
 }
 
+message AcommGeoPoint{
+     option (dccl.msg) = { codec_version: 4
+                          id: 8
+                          max_bytes: 32 };
+    required double time = 1 [ (dccl.field) = {min: 1750000000 max: 1800000000 precision: 3} ];
+    required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
+    required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
+     required double latitude = 4 [ (dccl.field) = {min: -9000.0 max: 9000.0 precision: 6} ];
+    required double longitude = 5 [ (dccl.field) = {min: -18000.0 max: 18000.0 precision: 6} ];
+    required double altitude = 6 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 2} ];
+}
+
+
 message SetPowerPort{
     option (dccl.msg) = { codec_version: 4
         id: 20
