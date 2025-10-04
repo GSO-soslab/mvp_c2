@@ -64,7 +64,7 @@ class MvpC2Commander(Node):
         topic_prefix = 'remote/id_' + str(self.remote_id)
         self.remote_odom_pub = self.create_publisher(Odometry, topic_prefix + '/odometry', 10)
         self.remote_geopose_pub = self.create_publisher(GeoPoseStamped, topic_prefix + '/geopose', 10)
-        self.remote_acomm_geopoint_pub = self.create_publisher(NavSatFix, topic_prefix + '/acomm/navsatfix', 10)
+        self.remote_acomm_navsat_pub = self.create_publisher(NavSatFix, topic_prefix + '/acomm/navsatfix', 10)
 
         self.remote_odom_navsat_pub = self.create_publisher(NavSatFix, topic_prefix + '/odometry/navsatfix', 10)
         self.remote_controller_state_pub = self.create_publisher(Bool, topic_prefix + '/controller_state', 10)
@@ -188,6 +188,13 @@ class MvpC2Commander(Node):
                         msg.pose.pose.orientation.z = proto_msg.orientation[2]
                         msg.pose.pose.orientation.w = proto_msg.orientation[3]
 
+        self.remote_set_controller_srv = self.create_service(SetBool, topic_prefix + '/controller/set', self.remote_set_controller_callback)
+        self.remote_set_state_srv = self.create_service(SetString, topic_prefix + '/mvp_helm/change_state', self.remote_set_helm_state_callback)
+        self.remote_set_wpt_srv = self.create_service(SendWaypoints, topic_prefix + '/mvp_helm/set_waypoints', self.remote_set_waypoints_callback)
+        self.remote_reset_datum_srv = self.create_service(Trigger, topic_prefix + '/reset_datum', self.reset_datum_callback)
+
+        ##service for roslaunch files
+        if len(self.launch_packages) == len(self.launch_file
                     if len(proto_msg.uvw) ==3:
                         msg.twist.twist.linear.x = proto_msg.uvw[0]
                         msg.twist.twist.linear.y = proto_msg.uvw[1]
@@ -302,7 +309,7 @@ class MvpC2Commander(Node):
                     msg.longitude = proto_msg.longitude*0.01
                     msg.altitude = proto_msg.altitude
                     msg.position_covariance_type = 1
-                    self.remote_acomm_geopoint_pub.publish(msg)
+                    self.remote_acomm_navsat_pub.publish(msg)
 
                 except Exception as e:
                     # Print the exception message for debugging
