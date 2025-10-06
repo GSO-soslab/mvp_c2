@@ -187,14 +187,7 @@ class MvpC2Commander(Node):
                         msg.pose.pose.orientation.y = proto_msg.orientation[1]
                         msg.pose.pose.orientation.z = proto_msg.orientation[2]
                         msg.pose.pose.orientation.w = proto_msg.orientation[3]
-
-        self.remote_set_controller_srv = self.create_service(SetBool, topic_prefix + '/controller/set', self.remote_set_controller_callback)
-        self.remote_set_state_srv = self.create_service(SetString, topic_prefix + '/mvp_helm/change_state', self.remote_set_helm_state_callback)
-        self.remote_set_wpt_srv = self.create_service(SendWaypoints, topic_prefix + '/mvp_helm/set_waypoints', self.remote_set_waypoints_callback)
-        self.remote_reset_datum_srv = self.create_service(Trigger, topic_prefix + '/reset_datum', self.reset_datum_callback)
-
-        ##service for roslaunch files
-        if len(self.launch_packages) == len(self.launch_file
+                        
                     if len(proto_msg.uvw) ==3:
                         msg.twist.twist.linear.x = proto_msg.uvw[0]
                         msg.twist.twist.linear.y = proto_msg.uvw[1]
