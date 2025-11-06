@@ -46,7 +46,7 @@ class MvpC2SerialRos(Node):
                     data = data + temp_data
                     counter = counter + 1
 
-                    if len(data) >= 3 and data[-4] == 42: #the four last chars are *AB\n
+                    if len(data) >= 4 and data[-4] == 42: #the four last chars are *AB\n
                         msg = ByteMultiArray()
                         msg.data = data
                         # print(msg.data)
