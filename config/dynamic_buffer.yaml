@@ -1,13 +1,5 @@
-/comm_manager_node:
+test/mvp_c2_traffic_control:
   ros__parameters:
-    # --- Network Timing (TDMA + Full-Duplex) ---
-    network:
-      mode: "tdma"            # "full_duplex", "tdma", or "hybrid"
-      cycle_length: 20.0        # Total TDMA cycle
-      slot_start: 5.0           # When our window opens
-      slot_duration: 3.0        # How long we can transmit
-      stream_rate_hz: 5.0       # Transmit frequency when allowed (Full-Duplex Rate)
-
     # --- Buffer Global Settings ---
     dynamic_buffer:
       max_total_size: 150
