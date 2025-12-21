@@ -124,6 +124,7 @@ class MvpC2Commander(Node):
                                          'mvp_cmd_dccl.proto') )
         
         self.dccl_obj = dccl.Codec()
+        self.load_dccl
         print("mvp_c2 commander initialized", flush=True)
 
         ##timer for resetting the dccl tx flag
@@ -151,6 +152,27 @@ class MvpC2Commander(Node):
     # def reset_dccl_tx_joy_flag(self):
     #     self.local_joy_tx_flag = False
 
+    def load_dccl(self):
+        self.dccl_obj.load('Joy')
+        self.dccl_obj.load('PWM')
+        self.dccl_obj.load('Odometry')
+        self.dccl_obj.load('GeoPose')
+        self.dccl_obj.load('PowerMonitor')
+        self.dccl_obj.load('CPUMonitor')
+        self.dccl_obj.load('AltimeterPointStamped')
+        self.dccl_obj.load('AcommGeoPoint')
+        self.dccl_obj.load('SetPowerPort')
+        self.dccl_obj.load('ReportPowerPort')
+        self.dccl_obj.load('SetController')
+        self.dccl_obj.load('ReportController')
+        self.dccl_obj.load('SetHelm')
+        self.dccl_obj.load('ReportHelm')
+        self.dccl_obj.load('SetWpt')
+        self.dccl_obj.load('ReportWpt')
+        self.dccl_obj.load('ResetDatum')
+        self.dccl_obj.load('RosLaunch')
+        self.dccl_obj.load('ReportRosLaunch')
+
     #######################################################
     ############DCCL parsing###############################
     #######################################################
@@ -166,7 +188,6 @@ class MvpC2Commander(Node):
             #odometry 
             if message_id == 3:
                 try:
-                    self.dccl_obj.load('Odometry')
                     proto_msg = self.dccl_obj.decode(data)
                     # print(decoded_msg, flush = True)
                     msg = Odometry()
@@ -206,7 +227,6 @@ class MvpC2Commander(Node):
             #geopose
             if message_id == 4:
                 try:
-                    self.dccl_obj.load('GeoPose')
                     proto_msg = self.dccl_obj.decode(data)
                     # print(decoded_msg, flush = True)
                     msg = GeoPoseStamped()
@@ -246,7 +266,6 @@ class MvpC2Commander(Node):
             ##Power info message
             if message_id == 5:
                 try:
-                    self.dccl_obj.load('PowerMonitor')
                     proto_msg = self.dccl_obj.decode(data)
                     #call the service and make the dccl msg
                     msg = Float32MultiArray()
@@ -259,7 +278,6 @@ class MvpC2Commander(Node):
             ##CPU info message
             if message_id == 6:
                 try:
-                    self.dccl_obj.load('CPUMonitor')
                     proto_msg = self.dccl_obj.decode(data)
                     #call the service and make the dccl msg
                     msg = Float32MultiArray()
@@ -272,7 +290,6 @@ class MvpC2Commander(Node):
             ##ALtimeter pointstamped
             if message_id ==7:
                 try:
-                    self.dccl_obj.load('AltimeterPointStamped')
                     proto_msg = self.dccl_obj.decode(data)
                     msg = PointStamped()
                     sec = int(proto_msg.time)  
@@ -289,7 +306,6 @@ class MvpC2Commander(Node):
             ##acomm geopoint pointstamped
             if message_id ==8:
                 try:
-                    self.dccl_obj.load('AcommGeoPoint')
                     proto_msg = self.dccl_obj.decode(data)
                     msg = NavSatFix()
                     sec = int(proto_msg.time)  
@@ -311,7 +327,6 @@ class MvpC2Commander(Node):
             ##report controller message
             if message_id == 23:
                 try:
-                    self.dccl_obj.load('ReportController')
                     proto_msg = self.dccl_obj.decode(data)
                     #call the service and make the dccl msg
                     msg = Bool()
@@ -324,7 +339,6 @@ class MvpC2Commander(Node):
             ##report helm
             if message_id == 31:
                 try:
-                    self.dccl_obj.load('ReportHelm')
                     proto_msg = self.dccl_obj.decode(data)
                     msg = HelmState()
                     msg.name = self.default_state_list[proto_msg.state]
@@ -338,7 +352,6 @@ class MvpC2Commander(Node):
             if message_id == 33:
                 # print("got Wpt", flush =True)
                 try:
-                    self.dccl_obj.load('ReportWpt')
                     proto_msg = self.dccl_obj.decode(data)
                     msg = Waypoints()
                     sec = int(proto_msg.time)  
@@ -361,7 +374,6 @@ class MvpC2Commander(Node):
             # report roslaunch status
             if message_id == 41:
                 try:
-                    self.dccl_obj.load('ReportRosLaunch')
                     proto_msg = self.dccl_obj.decode(data)
                     msg = Int16MultiArray()
                     msg.data = proto_msg.state
@@ -374,7 +386,6 @@ class MvpC2Commander(Node):
             #report set power status
             if message_id == 21:
                 try:
-                    self.dccl_obj.load('ReportPowerPort')
                     proto_msg = self.dccl_obj.decode(data)
                     msg = Int16MultiArray()
                     msg.data = proto_msg.state
@@ -397,7 +408,6 @@ class MvpC2Commander(Node):
     #joy callback
     def joy_callback(self, msg):
         # print("got joy")
-        self.dccl_obj.load('Joy')
         proto = mvp_cmd_dccl_pb2.Joy()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -412,7 +422,6 @@ class MvpC2Commander(Node):
     #set remote controller service callback
     def remote_set_controller_callback(self, request, response):
         # print("got set controller")
-        self.dccl_obj.load('SetController')
         proto = mvp_cmd_dccl_pb2.SetController()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -428,7 +437,6 @@ class MvpC2Commander(Node):
     
     ##set remote helm state
     def remote_set_helm_state_callback(self, request, response):
-        self.dccl_obj.load('SetHelm')
         proto = mvp_cmd_dccl_pb2.SetHelm()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -450,7 +458,6 @@ class MvpC2Commander(Node):
 
     #set waypoints
     def remote_set_waypoints_callback(self, request, response):
-        self.dccl_obj.load('SetWpt')
         # print(request, flush =True)
         # print(len(request.wpt), flush =True)
         proto = mvp_cmd_dccl_pb2.SetWpt()
@@ -481,7 +488,6 @@ class MvpC2Commander(Node):
 
     #reset datum
     def reset_datum_callback(self, request, response):
-        self.dccl_obj.load('ResetDatum')
         proto = mvp_cmd_dccl_pb2.ResetDatum()
         proto.time = round(time.time(), 3)
         proto.local_id = self.local_id
@@ -498,7 +504,6 @@ class MvpC2Commander(Node):
     #ros launch request callback
     def roslaunch_srv_callback(self, request, response, index):
         # Use some_int_value here
-        self.dccl_obj.load('RosLaunch')
         proto = mvp_cmd_dccl_pb2.RosLaunch()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
@@ -517,7 +522,6 @@ class MvpC2Commander(Node):
         # return response   
 
     def set_gpio_callback(self, request, response, index):
-        self.dccl_obj.load('SetPowerPort')
         proto = mvp_cmd_dccl_pb2.SetPowerPort()
         proto.time=round(time.time(), 3)
         proto.local_id = self.local_id

@@ -104,7 +104,7 @@ class MvpC2Reporter(Node):
         
         self.dccl_obj = dccl.Codec()
         print("dccl_ros_node initialized", flush=True)
-
+        self.load_dccl()
         ##timer for resetting the dccl tx flag
         # self.local_odom_tx_flag = False
         # self.local_geopose_tx_flag = False
@@ -144,6 +144,27 @@ class MvpC2Reporter(Node):
     #     self.local_altimeter_info_tx_flag = False
 
 
+    def load_dccl(self):
+        self.dccl_obj.load('Joy')
+        self.dccl_obj.load('PWM')
+        self.dccl_obj.load('Odometry')
+        self.dccl_obj.load('GeoPose')
+        self.dccl_obj.load('PowerMonitor')
+        self.dccl_obj.load('CPUMonitor')
+        self.dccl_obj.load('AltimeterPointStamped')
+        self.dccl_obj.load('AcommGeoPoint')
+        self.dccl_obj.load('SetPowerPort')
+        self.dccl_obj.load('ReportPowerPort')
+        self.dccl_obj.load('SetController')
+        self.dccl_obj.load('ReportController')
+        self.dccl_obj.load('SetHelm')
+        self.dccl_obj.load('ReportHelm')
+        self.dccl_obj.load('SetWpt')
+        self.dccl_obj.load('ReportWpt')
+        self.dccl_obj.load('ResetDatum')
+        self.dccl_obj.load('RosLaunch')
+        self.dccl_obj.load('ReportRosLaunch')
+
 
     #######################################################
     ############DCCL parsing###############################
@@ -163,7 +184,6 @@ class MvpC2Reporter(Node):
             #Joy
             if message_id == 1:
                 try:
-                    self.dccl_obj.load('Joy')
                     proto_msg = self.dccl_obj.decode(data)
                     # print(decoded_msg, flush = True)
                     msg = Joy()
@@ -181,7 +201,6 @@ class MvpC2Reporter(Node):
             #set controller
             if message_id ==22:
                 try: 
-                    self.dccl_obj.load('SetController')
                     proto_msg = self.dccl_obj.decode(data)
                     self.local_set_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
                     request = SetBool.Request()
@@ -198,7 +217,6 @@ class MvpC2Reporter(Node):
             if message_id == 30:
                 # print("got change helm ", flush = True)
                 try:
-                    self.dccl_obj.load('SetHelm')
                     proto_msg = self.dccl_obj.decode(data)
                     # print(proto_msg, flush = True)
                     self.local_set_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
@@ -216,7 +234,6 @@ class MvpC2Reporter(Node):
             #roslaunch request
             if message_id == 40: 
                 try:
-                    self.dccl_obj.load('RosLaunch')
                     proto_msg = self.dccl_obj.decode(data)
                     index = proto_msg.index
                     req = proto_msg.req
@@ -232,7 +249,6 @@ class MvpC2Reporter(Node):
             #set power request
             if message_id == 20:
                 try:
-                    self.dccl_obj.load('SetPowerPort')
                     proto_msg = self.dccl_obj.decode(data)
                     index = proto_msg.index
                     request = SetBool.Request()
@@ -247,7 +263,6 @@ class MvpC2Reporter(Node):
             ##waypoint set dccl
             if message_id == 32:
                 try:
-                    self.dccl_obj.load('SetWpt')
                     proto_msg = self.dccl_obj.decode(data)
                     self.local_set_wpt_client.wait_for_service(timeout_sec=self.ser_wait_time)
 
@@ -268,7 +283,6 @@ class MvpC2Reporter(Node):
             ##reset datum
             if message_id == 34:
                 try:
-                    self.dccl_obj.load('ResetDatum')
                     proto_msg = self.dccl_obj.decode(data)
                     self.local_reset_datum_client.wait_for_service(timeout_sec=self.ser_wait_time)
                     request = Trigger.Request()  
@@ -291,7 +305,6 @@ class MvpC2Reporter(Node):
     #odometry callback
     def odom_callback(self, msg):
         # print("got odometry", flush =True)
-        self.dccl_obj.load('Odometry')
         proto = mvp_cmd_dccl_pb2.Odometry()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -323,7 +336,6 @@ class MvpC2Reporter(Node):
     #geopose callback
     def geopose_callback(self, msg):
         # print("got geopose")
-        self.dccl_obj.load('GeoPose')
         proto = mvp_cmd_dccl_pb2.GeoPose()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -347,7 +359,6 @@ class MvpC2Reporter(Node):
     #acomm geopose topic (from usbl)
     def acomm_geopoint_callback(self, msg):
         # print("got acom_geopose")
-        self.dccl_obj.load('AcommGeoPoint')
         proto = mvp_cmd_dccl_pb2.AcommGeoPoint()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
@@ -362,7 +373,6 @@ class MvpC2Reporter(Node):
 
     #power monitor
     def power_vi_callback(self, msg):
-        self.dccl_obj.load('PowerMonitor')
         proto = mvp_cmd_dccl_pb2.PowerMonitor()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -375,7 +385,6 @@ class MvpC2Reporter(Node):
     
     #cpu monitor
     def cpu_info_callback(self, msg):
-        self.dccl_obj.load('CPUMonitor')
         proto = mvp_cmd_dccl_pb2.CPUMonitor()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -388,7 +397,6 @@ class MvpC2Reporter(Node):
 
     #altimeter
     def altimeter_callback(self, msg):
-        self.dccl_obj.load('AltimeterPointStamped')
         proto = mvp_cmd_dccl_pb2.AltimeterPointStamped()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -404,7 +412,6 @@ class MvpC2Reporter(Node):
 
         running_launches = self.roslauncher.list_running_launches()
         # data = []
-        self.dccl_obj.load('ReportRosLaunch')
         proto = mvp_cmd_dccl_pb2.ReportRosLaunch()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
@@ -437,7 +444,6 @@ class MvpC2Reporter(Node):
 
     def report_gpio_state_callback_done(self, future):
         response = future.result()
-        self.dccl_obj.load('ReportPowerPort')
         proto = mvp_cmd_dccl_pb2.ReportPowerPort()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
@@ -476,7 +482,6 @@ class MvpC2Reporter(Node):
         response = future.result()
         # self.get_logger().info(f'Service response: {response.message}')
         ##make dccl
-        self.dccl_obj.load('ReportController')
         proto = mvp_cmd_dccl_pb2.ReportController()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -514,7 +519,6 @@ class MvpC2Reporter(Node):
         response = future.result()
         # self.get_logger().info(f'Service response: {response}')
         ##make dccl
-        self.dccl_obj.load('ReportHelm')
         proto = mvp_cmd_dccl_pb2.ReportHelm()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
@@ -562,7 +566,6 @@ class MvpC2Reporter(Node):
         # print(response)
         # self.get_logger().info(f'Service response: {response}')
         ##make dccl
-        self.dccl_obj.load('ReportWpt')
         proto = mvp_cmd_dccl_pb2.ReportWpt()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id

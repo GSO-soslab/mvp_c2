@@ -7,6 +7,7 @@ import dccl
 import mvp_cmd_dccl_pb2
 from ament_index_python.packages import get_package_share_directory
 from include.dynamic_buffer import DynamicBufferPython
+from google.protobuf import descriptor_pool
 
 
 class TrafficControlRos(Node):
@@ -43,16 +44,18 @@ class TrafficControlRos(Node):
         self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
     
     def load_dynamic_buffer_config(self):
+
         max_size = self.get_parameter('dynamic_buffer.max_total_size').value
 
         buffer_overflow_remove_by_time = self.get_parameter('dynamic_buffer.overflow_remove_by_time').value
+
+        self.max_frame_size = self.get_parameter('max_frame_size').value
 
         # BUffering parameter
         self.output_buffer = bytearray()
         self.output_msg_names = "" # This will track the names
         # self.max_frame_size = self.declare_parameter('max_frame_size', 128).value 
 
-        self.max_frame_size = self.get_parameter('max_frame_size').value
         # self.allowed_messages = self.get_parameter('dynamic_buffer.dccl_intake_message_list').value
         msg_list_param = self.get_parameter('dynamic_buffer.dccl_intake_message_list')
 
