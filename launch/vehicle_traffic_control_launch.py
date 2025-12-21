@@ -16,7 +16,7 @@ def generate_launch_description():
 
         Node(
             package='mvp_c2',
-            namespace='test',
+            namespace='reporter',
             executable='mvp_c2_traffic_control_ros',
             name='mvp_c2_traffic_control',
             output='screen',

@@ -4,7 +4,7 @@ def package_dccl(data):
     for byte in data:
         checksum ^= byte     
     ender_bytes = f"*{checksum:02X}"
-    data_out = bytearray('$C2', 'ascii') + data +  bytearray(ender_bytes+'\n', 'ascii')
+    data_out = bytearray('$$', 'ascii') + data +  bytearray(ender_bytes+'\n', 'ascii')
     return data_out
 
 
@@ -12,7 +12,7 @@ def check_dccl(data):
         flag = False
         data_out = data  #
         #check the header
-        if data[:3] != bytearray([36, 67, 50]): #$C2
+        if data[:2] != bytearray([36, 36]): #$C2
             print("Error: Header imcomplete", flush = True)
             # print(data, flush = True)
             # print(f'data size = {len(data)}')
@@ -30,7 +30,7 @@ def check_dccl(data):
                 checksum_str = bytes([data[-3], data[-2]]).decode('ascii')
                 #compute checksum
                 calculated_checksum = 0
-                for byte in data[3:-4]: 
+                for byte in data[2:-4]: 
                     calculated_checksum ^= byte
                 # Format the checksum 
                 calculated_checksum_str = f"{calculated_checksum:02X}"
@@ -38,7 +38,7 @@ def check_dccl(data):
                 #compare checksum with the calculated checksum
                 if calculated_checksum_str == checksum_str:
                     # print("Data is complete and valid.")
-                    data_extracted = data[3:-4]
+                    data_extracted = data[2:-4]
                     data_out = bytes(data_extracted)
                     flag = True
                 else:

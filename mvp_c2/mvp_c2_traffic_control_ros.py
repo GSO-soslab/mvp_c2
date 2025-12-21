@@ -85,7 +85,7 @@ class TrafficControlRos(Node):
             raw_bytes = bytes(raw_bytes)
             # raw_bytes = bytes(msg.data)
             # Extract DCCL core (Strips $$$ and *XX\n)
-            dccl_payload = raw_bytes[3:-4]
+            dccl_payload = raw_bytes[2:-4]
             
             # Peek at type
             decoded_obj = self.dccl_codec.decode(dccl_payload)
@@ -130,7 +130,7 @@ class TrafficControlRos(Node):
         out_msg = ByteMultiArray()
         out_msg.data = bytearray(self.output_buffer)
         self.dccl_tx_pub.publish(out_msg)
-        # self.get_logger().info(f"Buffer data length: {len(out_msg.data)}")
+        self.get_logger().info(f"Buffer data length: {len(out_msg.data)}")
 
         name_msg = String()
         name_msg.data = self.output_msg_names
