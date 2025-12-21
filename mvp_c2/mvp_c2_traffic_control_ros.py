@@ -73,10 +73,6 @@ class TrafficControlRos(Node):
                     group_name=rules['group']
                 )
         except Exception as e:
-            self.get_logger().error(f"Failed to buffer local message: {e}")
-
-    
-        except Exception as e:
             self.get_logger().error(f"Failed to process DCCL intake: {e}")
 
 
