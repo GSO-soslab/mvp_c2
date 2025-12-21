@@ -186,213 +186,219 @@ class MvpC2Commander(Node):
             # print(message_id, flush = True)
             print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
             #odometry 
-            if message_id == 3:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    # print(decoded_msg, flush = True)
-                    msg = Odometry()
-                    sec = int(proto_msg.time)  
-                    nanosec = int((proto_msg.time - sec) * 1e9)  
-                    msg.header.stamp.sec = sec
-                    msg.header.stamp.nanosec = nanosec
-                    # msg.header.frame_id = proto_msg.frame_id
-                    # msg.child_frame_id = proto_msg.child_frame_id
-                    #map position
-                    if len(proto_msg.position) ==3:
-                        msg.pose.pose.position.x = proto_msg.position[0]
-                        msg.pose.pose.position.y = proto_msg.position[1]
-                        msg.pose.pose.position.z = proto_msg.position[2]
+            if self.dccl_obj.remote_id(data) == self.local_id:
 
-                    if len(proto_msg.orientation) ==4:
-                        msg.pose.pose.orientation.x = proto_msg.orientation[0]
-                        msg.pose.pose.orientation.y = proto_msg.orientation[1]
-                        msg.pose.pose.orientation.z = proto_msg.orientation[2]
-                        msg.pose.pose.orientation.w = proto_msg.orientation[3]
-                        
-                    if len(proto_msg.uvw) ==3:
-                        msg.twist.twist.linear.x = proto_msg.uvw[0]
-                        msg.twist.twist.linear.y = proto_msg.uvw[1]
-                        msg.twist.twist.linear.z = proto_msg.uvw[2]
+                if message_id == 3:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        # print(decoded_msg, flush = True)
+                        msg = Odometry()
+                        sec = int(proto_msg.time)  
+                        nanosec = int((proto_msg.time - sec) * 1e9)  
+                        msg.header.stamp.sec = sec
+                        msg.header.stamp.nanosec = nanosec
+                        # msg.header.frame_id = proto_msg.frame_id
+                        # msg.child_frame_id = proto_msg.child_frame_id
+                        #map position
+                        if len(proto_msg.position) ==3:
+                            msg.pose.pose.position.x = proto_msg.position[0]
+                            msg.pose.pose.position.y = proto_msg.position[1]
+                            msg.pose.pose.position.z = proto_msg.position[2]
 
-                    if len(proto_msg.pqr) ==3:
-                        msg.twist.twist.angular.x = proto_msg.pqr[0]
-                        msg.twist.twist.angular.y = proto_msg.pqr[1]
-                        msg.twist.twist.angular.z = proto_msg.pqr[2]
+                        if len(proto_msg.orientation) ==4:
+                            msg.pose.pose.orientation.x = proto_msg.orientation[0]
+                            msg.pose.pose.orientation.y = proto_msg.orientation[1]
+                            msg.pose.pose.orientation.z = proto_msg.orientation[2]
+                            msg.pose.pose.orientation.w = proto_msg.orientation[3]
+                            
+                        if len(proto_msg.uvw) ==3:
+                            msg.twist.twist.linear.x = proto_msg.uvw[0]
+                            msg.twist.twist.linear.y = proto_msg.uvw[1]
+                            msg.twist.twist.linear.z = proto_msg.uvw[2]
 
-                    self.remote_odom_pub.publish(msg)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                        if len(proto_msg.pqr) ==3:
+                            msg.twist.twist.angular.x = proto_msg.pqr[0]
+                            msg.twist.twist.angular.y = proto_msg.pqr[1]
+                            msg.twist.twist.angular.z = proto_msg.pqr[2]
 
-            #geopose
-            if message_id == 4:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    # print(decoded_msg, flush = True)
-                    msg = GeoPoseStamped()
-                    sec = int(proto_msg.time)  
-                    nanosec = int((proto_msg.time - sec) * 1e9)  
-                    msg.header.stamp.sec = sec
-                    msg.header.stamp.nanosec = nanosec
-                    # msg.header.frame_id = proto_msg.frame_id
-                    msg.pose.position.latitude = proto_msg.latitude*0.01
-                    msg.pose.position.longitude = proto_msg.longitude*0.01
-                    msg.pose.position.altitude = proto_msg.altitude
-                    if len(proto_msg.orientation) ==4:
-                        msg.pose.orientation.x = proto_msg.orientation[0]
-                        msg.pose.orientation.y = proto_msg.orientation[1]
-                        msg.pose.orientation.z = proto_msg.orientation[2]
-                        msg.pose.orientation.w = proto_msg.orientation[3]
-                    self.remote_geopose_pub.publish(msg)
+                        self.remote_odom_pub.publish(msg)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-                    ##get navsatfix
-                    msg = NavSatFix()
-                    sec = int(proto_msg.time)  
-                    nanosec = int((proto_msg.time - sec) * 1e9)  
-                    msg.header.stamp.sec = sec
-                    msg.header.stamp.nanosec = nanosec
-                    msg.status.status = 0
-                    msg.status.service = 1
-                    msg.latitude =  proto_msg.latitude*0.01
-                    msg.longitude = proto_msg.longitude*0.01
-                    msg.altitude = proto_msg.altitude
-                    msg.position_covariance_type = 1
-                    self.remote_odom_navsat_pub.publish(msg)
+                #geopose
+                if message_id == 4:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        # print(decoded_msg, flush = True)
+                        msg = GeoPoseStamped()
+                        sec = int(proto_msg.time)  
+                        nanosec = int((proto_msg.time - sec) * 1e9)  
+                        msg.header.stamp.sec = sec
+                        msg.header.stamp.nanosec = nanosec
+                        # msg.header.frame_id = proto_msg.frame_id
+                        msg.pose.position.latitude = proto_msg.latitude*0.01
+                        msg.pose.position.longitude = proto_msg.longitude*0.01
+                        msg.pose.position.altitude = proto_msg.altitude
+                        if len(proto_msg.orientation) ==4:
+                            msg.pose.orientation.x = proto_msg.orientation[0]
+                            msg.pose.orientation.y = proto_msg.orientation[1]
+                            msg.pose.orientation.z = proto_msg.orientation[2]
+                            msg.pose.orientation.w = proto_msg.orientation[3]
+                        self.remote_geopose_pub.publish(msg)
 
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                        ##get navsatfix
+                        msg = NavSatFix()
+                        sec = int(proto_msg.time)  
+                        nanosec = int((proto_msg.time - sec) * 1e9)  
+                        msg.header.stamp.sec = sec
+                        msg.header.stamp.nanosec = nanosec
+                        msg.status.status = 0
+                        msg.status.service = 1
+                        msg.latitude =  proto_msg.latitude*0.01
+                        msg.longitude = proto_msg.longitude*0.01
+                        msg.altitude = proto_msg.altitude
+                        msg.position_covariance_type = 1
+                        self.remote_odom_navsat_pub.publish(msg)
 
-            ##Power info message
-            if message_id == 5:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    #call the service and make the dccl msg
-                    msg = Float32MultiArray()
-                    msg.data = [proto_msg.data[0], proto_msg.data[1]]
-                    self.remote_power_info_pub.publish(msg)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            ##CPU info message
-            if message_id == 6:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    #call the service and make the dccl msg
-                    msg = Float32MultiArray()
-                    msg.data = [proto_msg.data[0], proto_msg.data[1], proto_msg.data[2]]
-                    self.remote_cpu_info_pub.publish(msg)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                ##Power info message
+                if message_id == 5:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        #call the service and make the dccl msg
+                        msg = Float32MultiArray()
+                        msg.data = [proto_msg.data[0], proto_msg.data[1]]
+                        self.remote_power_info_pub.publish(msg)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            ##ALtimeter pointstamped
-            if message_id ==7:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    msg = PointStamped()
-                    sec = int(proto_msg.time)  
-                    nanosec = int((proto_msg.time - sec) * 1e9)  
-                    msg.header.stamp.sec = sec
-                    msg.header.stamp.nanosec = nanosec
-                    msg.point.z = proto_msg.data
-                    self.remote_altimeter_pub.publish(msg)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                ##CPU info message
+                if message_id == 6:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        #call the service and make the dccl msg
+                        msg = Float32MultiArray()
+                        msg.data = [proto_msg.data[0], proto_msg.data[1], proto_msg.data[2]]
+                        self.remote_cpu_info_pub.publish(msg)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
+
+                ##ALtimeter pointstamped
+                if message_id ==7:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        msg = PointStamped()
+                        sec = int(proto_msg.time)  
+                        nanosec = int((proto_msg.time - sec) * 1e9)  
+                        msg.header.stamp.sec = sec
+                        msg.header.stamp.nanosec = nanosec
+                        msg.point.z = proto_msg.data
+                        self.remote_altimeter_pub.publish(msg)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
 
-            ##acomm geopoint pointstamped
-            if message_id ==8:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    msg = NavSatFix()
-                    sec = int(proto_msg.time)  
-                    nanosec = int((proto_msg.time - sec) * 1e9)  
-                    msg.header.stamp.sec = sec
-                    msg.header.stamp.nanosec = nanosec
-                    msg.status.status = 0
-                    msg.status.service = 1
-                    msg.latitude =  proto_msg.latitude*0.01
-                    msg.longitude = proto_msg.longitude*0.01
-                    msg.altitude = proto_msg.altitude
-                    msg.position_covariance_type = 1
-                    self.remote_acomm_navsat_pub.publish(msg)
+                ##acomm geopoint pointstamped
+                if message_id ==8:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        msg = NavSatFix()
+                        sec = int(proto_msg.time)  
+                        nanosec = int((proto_msg.time - sec) * 1e9)  
+                        msg.header.stamp.sec = sec
+                        msg.header.stamp.nanosec = nanosec
+                        msg.status.status = 0
+                        msg.status.service = 1
+                        msg.latitude =  proto_msg.latitude*0.01
+                        msg.longitude = proto_msg.longitude*0.01
+                        msg.altitude = proto_msg.altitude
+                        msg.position_covariance_type = 1
+                        self.remote_acomm_navsat_pub.publish(msg)
 
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            ##report controller message
-            if message_id == 23:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    #call the service and make the dccl msg
-                    msg = Bool()
-                    msg.data = proto_msg.status
-                    self.remote_controller_state_pub.publish(msg)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                ##report controller message
+                if message_id == 23:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        #call the service and make the dccl msg
+                        msg = Bool()
+                        msg.data = proto_msg.status
+                        self.remote_controller_state_pub.publish(msg)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            ##report helm
-            if message_id == 31:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    msg = HelmState()
-                    msg.name = self.default_state_list[proto_msg.state]
-                    msg.transitions = [self.default_state_list[i] for i in proto_msg.connected_state]
-                    self.remote_helm_state_pub.publish(msg)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                ##report helm
+                if message_id == 31:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        msg = HelmState()
+                        msg.name = self.default_state_list[proto_msg.state]
+                        msg.transitions = [self.default_state_list[i] for i in proto_msg.connected_state]
+                        self.remote_helm_state_pub.publish(msg)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            ## report waypoints
-            if message_id == 33:
-                # print("got Wpt", flush =True)
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    msg = Waypoints()
-                    sec = int(proto_msg.time)  
-                    nanosec = int((proto_msg.time - sec) * 1e9)  
-                    msg.wpt = [Waypoint() for _ in range(proto_msg.wpt_size)]
-                    for i in range(proto_msg.wpt_size):
-                        msg.wpt[i].header.stamp.sec = sec
-                        msg.wpt[i].header.stamp.nanosec = nanosec
-                        msg.wpt[i].header.frame_id = 'geopath'
-                        msg.wpt[i].ll_wpt.latitude = proto_msg.latitude[i]*0.01
-                        msg.wpt[i].ll_wpt.longitude = proto_msg.longitude[i]*0.01
-                        msg.wpt[i].ll_wpt.altitude = proto_msg.altitude[i]
-                        msg.wpt[i].u = proto_msg.u[i]
-                    self.remote_wpt_report_pub.publish(msg)
+                ## report waypoints
+                if message_id == 33:
+                    # print("got Wpt", flush =True)
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        msg = Waypoints()
+                        sec = int(proto_msg.time)  
+                        nanosec = int((proto_msg.time - sec) * 1e9)  
+                        msg.wpt = [Waypoint() for _ in range(proto_msg.wpt_size)]
+                        for i in range(proto_msg.wpt_size):
+                            msg.wpt[i].header.stamp.sec = sec
+                            msg.wpt[i].header.stamp.nanosec = nanosec
+                            msg.wpt[i].header.frame_id = 'geopath'
+                            msg.wpt[i].ll_wpt.latitude = proto_msg.latitude[i]*0.01
+                            msg.wpt[i].ll_wpt.longitude = proto_msg.longitude[i]*0.01
+                            msg.wpt[i].ll_wpt.altitude = proto_msg.altitude[i]
+                            msg.wpt[i].u = proto_msg.u[i]
+                        self.remote_wpt_report_pub.publish(msg)
 
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            # report roslaunch status
-            if message_id == 41:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    msg = Int16MultiArray()
-                    msg.data = proto_msg.state
-                    self.remote_roslaunch_report_pub.publish(msg)
+                # report roslaunch status
+                if message_id == 41:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        msg = Int16MultiArray()
+                        msg.data = proto_msg.state
+                        self.remote_roslaunch_report_pub.publish(msg)
 
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            #report set power status
-            if message_id == 21:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    msg = Int16MultiArray()
-                    msg.data = proto_msg.state
-                    self.remote_gpio_power_report_pub.publish(msg)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                #report set power status
+                if message_id == 21:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        msg = Int16MultiArray()
+                        msg.data = proto_msg.state
+                        self.remote_gpio_power_report_pub.publish(msg)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
+            else:
+                print("DCCL filtered because remote_id don't match my local id", flush=True)
+                
+
     ##publish dccl 
     def publish_dccl(self, proto):
         dccl_msg = ByteMultiArray()

@@ -180,117 +180,123 @@ class MvpC2Reporter(Node):
             message_id = self.dccl_obj.id(data)
             print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
 
-            # print(message_id, flush = True)
-            #Joy
-            if message_id == 1:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    # print(decoded_msg, flush = True)
-                    msg = Joy()
-                    sec = int(proto_msg.time)  
-                    nanosec = int((proto_msg.time - sec) * 1e9)  
-                    msg.header.stamp.sec = sec
-                    msg.header.stamp.nanosec = nanosec
-                    msg.axes = proto_msg.axes
-                    msg.buttons = proto_msg.buttons
-                    self.local_joy_pub.publish(msg)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+            #get the remote id
+            if self.dccl_obj.remote_id(data) == self.local_id:
+                # print(message_id, flush = True)
+                #Joy
+                if message_id == 1:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        # print(decoded_msg, flush = True)
+                        msg = Joy()
+                        sec = int(proto_msg.time)  
+                        nanosec = int((proto_msg.time - sec) * 1e9)  
+                        msg.header.stamp.sec = sec
+                        msg.header.stamp.nanosec = nanosec
+                        msg.axes = proto_msg.axes
+                        msg.buttons = proto_msg.buttons
+                        self.local_joy_pub.publish(msg)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            #set controller
-            if message_id ==22:
-                try: 
-                    proto_msg = self.dccl_obj.decode(data)
-                    self.local_set_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
-                    request = SetBool.Request()
-                    request.data = proto_msg.status
+                #set controller
+                if message_id ==22:
+                    try: 
+                        proto_msg = self.dccl_obj.decode(data)
+                        self.local_set_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                        request = SetBool.Request()
+                        request.data = proto_msg.status
 
-                    future = self.local_set_controller_client.call_async(request)
-                    # rclpy.spin_until_future_complete(self, future)
+                        future = self.local_set_controller_client.call_async(request)
+                        # rclpy.spin_until_future_complete(self, future)
 
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            ##change helm state
-            if message_id == 30:
-                # print("got change helm ", flush = True)
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    # print(proto_msg, flush = True)
-                    self.local_set_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                ##change helm state
+                if message_id == 30:
+                    # print("got change helm ", flush = True)
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        # print(proto_msg, flush = True)
+                        self.local_set_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
 
-                    request = ChangeState.Request()
-                    request.state = self.default_state_list[proto_msg.state]
-                    # print(request.state, flush = True)
-                    request.caller = "dccl"
-                    future = self.local_set_helm_client.call_async(request)
-                    # rclpy.spin_until_future_complete(self, future)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                        request = ChangeState.Request()
+                        request.state = self.default_state_list[proto_msg.state]
+                        # print(request.state, flush = True)
+                        request.caller = "dccl"
+                        future = self.local_set_helm_client.call_async(request)
+                        # rclpy.spin_until_future_complete(self, future)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            #roslaunch request
-            if message_id == 40: 
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    index = proto_msg.index
-                    req = proto_msg.req
-                    print(f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {req}", flush = True)
-                    if req == True:
-                        self.roslauncher.start_launch(self.launch_packages[index], self.launch_file_names[index])
-                    else:
-                        self.roslauncher.stop_launch(self.launch_packages[index], self.launch_file_names[index])
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                #roslaunch request
+                if message_id == 40: 
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        index = proto_msg.index
+                        req = proto_msg.req
+                        print(f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {req}", flush = True)
+                        if req == True:
+                            self.roslauncher.start_launch(self.launch_packages[index], self.launch_file_names[index])
+                        else:
+                            self.roslauncher.stop_launch(self.launch_packages[index], self.launch_file_names[index])
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            #set power request
-            if message_id == 20:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    index = proto_msg.index
-                    request = SetBool.Request()
-                    request.data = proto_msg.state
-                    future = self.local_set_gpio_clients[index].call_async(request)
-                    print(f"{self.gpio_devices[index]} Power set to {request.data}", flush =True)
-                    
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                #set power request
+                if message_id == 20:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        index = proto_msg.index
+                        request = SetBool.Request()
+                        request.data = proto_msg.state
+                        future = self.local_set_gpio_clients[index].call_async(request)
+                        print(f"{self.gpio_devices[index]} Power set to {request.data}", flush =True)
+                        
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            ##waypoint set dccl
-            if message_id == 32:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    self.local_set_wpt_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                ##waypoint set dccl
+                if message_id == 32:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        self.local_set_wpt_client.wait_for_service(timeout_sec=self.ser_wait_time)
 
-                    request = SendWaypoints.Request()  
-                    request.type = 'geopath'
+                        request = SendWaypoints.Request()  
+                        request.type = 'geopath'
 
-                    request.wpt = [Waypoint() for _ in range(proto_msg.wpt_size)]
-                    for i in range(proto_msg.wpt_size):
-                        request.wpt[i].ll_wpt.latitude = proto_msg.latitude[i]*0.01
-                        request.wpt[i].ll_wpt.longitude = proto_msg.longitude[i]*0.01
-                        request.wpt[i].ll_wpt.altitude = proto_msg.altitude[i]
-                        request.wpt[i].u = proto_msg.u[i]
-                    future = self.local_set_wpt_client.call_async(request)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
-            
-            ##reset datum
-            if message_id == 34:
-                try:
-                    proto_msg = self.dccl_obj.decode(data)
-                    self.local_reset_datum_client.wait_for_service(timeout_sec=self.ser_wait_time)
-                    request = Trigger.Request()  
-                    future = self.local_reset_datum_client.call_async(request)
-                    print("Datum reset triggered", flush =True)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                        request.wpt = [Waypoint() for _ in range(proto_msg.wpt_size)]
+                        for i in range(proto_msg.wpt_size):
+                            request.wpt[i].ll_wpt.latitude = proto_msg.latitude[i]*0.01
+                            request.wpt[i].ll_wpt.longitude = proto_msg.longitude[i]*0.01
+                            request.wpt[i].ll_wpt.altitude = proto_msg.altitude[i]
+                            request.wpt[i].u = proto_msg.u[i]
+                        future = self.local_set_wpt_client.call_async(request)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
+                
+                ##reset datum
+                if message_id == 34:
+                    try:
+                        proto_msg = self.dccl_obj.decode(data)
+                        self.local_reset_datum_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                        request = Trigger.Request()  
+                        future = self.local_reset_datum_client.call_async(request)
+                        print("Datum reset triggered", flush =True)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
+            else:
+                print("DCCL filtered because remote_id don't match my local id", flush=True)
+
+                
     ##publish dccl 
     def publish_dccl(self, proto):
         dccl_msg = ByteMultiArray()
