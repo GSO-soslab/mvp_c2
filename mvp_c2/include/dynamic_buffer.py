@@ -1,6 +1,9 @@
 import heapq
 import time
 
+# only store the newest data in one group (dccl msg type).
+# data will be removed if the total entry has exceeded or the data has expired.
+
 class DynamicBufferPython:
     def __init__(self, max_total_size=100, drop_by_time= True):
         self._queue = []
@@ -60,9 +63,9 @@ class DynamicBufferPython:
             if not is_valid_ref[0]:
                 continue
                 
-            # 2. Check if it has expired
+            # 2. Check if it has expired, lazy removal
             if time.time() > expiration:
-                if group and self._groups.get(group)[2] == data:
+                if group and self._groups.get(group)[3]== data:
                     del self._groups[group]
                 continue # Discard expired item and move to next
                 
