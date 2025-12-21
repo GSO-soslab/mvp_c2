@@ -1,21 +1,21 @@
-test/mvp_c2_traffic_control:
+reporter/mvp_c2_traffic_control:
   ros__parameters:
     # --- Buffer Global Settings ---
     dynamic_buffer:
       max_total_size: 150
-      dccl_intake_message_list: ["Odometry", "GeoPose", "PowerMonitor"]
+      dccl_intake_message_list: ["Odometry", "GeoPose", "PowerMonitor", ReportRosLaunch]
 
     # --- Message Specific Rules ---
     message_rules:
       Odometry:
         priority: 10
-        ttl: 5
-        group: "Odometry"
+        ttl_seconds: 5
       GeoPose:
         priority: 12
-        ttl: 300
-        group: "GeoPose"
+        ttl_seconds: 300
       PowerMonitor:
         priority: 5
-        ttl: 10
-        group: "PowerMonitor"
+        ttl_seconds: 10
+      ReportRosLaunch:
+        priority: 20
+        ttl_seconds: 100

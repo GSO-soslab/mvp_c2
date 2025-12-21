@@ -112,10 +112,10 @@ class MvpC2Commander(Node):
 
 
         #DCCL byte array topic
-        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/dccl_msg_tx', 10)
+        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/commander/dccl_msg_tx', 10)
 
         self.dccl_reporter_sub = self.create_subscription(ByteMultiArray, 
-                                                        'mvp_c2/dccl_msg_rx', 
+                                                        'mvp_c2/commander/dccl_msg_rx', 
                                                         self.dccl_rx_callback, 10)
 
 

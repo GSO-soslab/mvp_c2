@@ -45,13 +45,13 @@ class MvpC2Reporter(Node):
         self.declare_parameter('helm_state_list', [''])
         self.default_state_list = self.get_parameter('helm_state_list').get_parameter_value().string_array_value
         
-        self.declare_parameter('launch_packages', [''])
+        self.declare_parameter('launch_packages', [])
         self.launch_packages = self.get_parameter('launch_packages').get_parameter_value().string_array_value
      
-        self.declare_parameter('launch_files', [''])
+        self.declare_parameter('launch_files', [])
         self.launch_file_names = self.get_parameter('launch_files').get_parameter_value().string_array_value
 
-        self.declare_parameter('gpio_devices', [''])
+        self.declare_parameter('gpio_devices', [])
         self.gpio_devices = self.get_parameter('gpio_devices').get_parameter_value().string_array_value
 
         ##roslauncher
@@ -80,6 +80,7 @@ class MvpC2Reporter(Node):
         self.local_set_gpio_clients = {}
         self.local_reset_datum_client = self.create_client(Trigger, 'reset_datum')
         
+
         for index in range(len(self.gpio_devices)):
             srv_name = 'gpio_manager/set_power/' + self.gpio_devices[index]
             client = self.create_client(SetBool,srv_name)
@@ -90,10 +91,10 @@ class MvpC2Reporter(Node):
         self.local_joy_pub = self.create_publisher(Joy, 'joy', 10)
 
         #DCCL byte array topic
-        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/dccl_msg_tx', 10)
+        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/reporter/dccl_msg_tx', 10)
         
         self.dccl_reporter_sub = self.create_subscription(ByteMultiArray, 
-                                                        'mvp_c2/dccl_msg_rx', 
+                                                        'mvp_c2/reporter/dccl_msg_rx', 
                                                         self.dccl_rx_callback, 10)
 
 
