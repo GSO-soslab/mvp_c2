@@ -80,14 +80,12 @@ class TrafficControlRos(Node):
             self.get_logger().error(f"Failed to process DCCL intake: {e}")
 
 
-        def dccl_pop_data(self):
-            # This pulls the 'best' message based on your YAML priorities
-            ready_to_send = self.dynamic_buffer.pop()
-            
-            if ready_to_send:
-                out_msg = ByteMultiArray()
-                out_msg.data = list(ready_to_send)
-                self.pub.publish(out_msg)
+    def dccl_pop_data(self):
+        ready_to_send = self.dynamic_buffer.pop()
+        if ready_to_send:
+            out_msg = ByteMultiArray()
+            out_msg.data = list(ready_to_send)
+            self.dccl_tx_pub.publish(out_msg)
 
 
 
