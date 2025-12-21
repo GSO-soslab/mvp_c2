@@ -1,0 +1,29 @@
+/comm_manager_node:
+  ros__parameters:
+    # --- Network Timing (TDMA + Full-Duplex) ---
+    network:
+      mode: "tdma"            # "full_duplex", "tdma", or "hybrid"
+      cycle_length: 20.0        # Total TDMA cycle
+      slot_start: 5.0           # When our window opens
+      slot_duration: 3.0        # How long we can transmit
+      stream_rate_hz: 5.0       # Transmit frequency when allowed (Full-Duplex Rate)
+
+    # --- Buffer Global Settings ---
+    dynamic_buffer:
+      max_total_size: 150
+      dccl_intake_message_list: ["Odometry", "GeoPose", "PowerMonitor"]
+
+    # --- Message Specific Rules ---
+    message_rules:
+      Odometry:
+        priority: 10
+        ttl: 5
+        group: "Odometry"
+      GeoPose:
+        priority: 12
+        ttl: 300
+        group: "GeoPose"
+      PowerMonitor:
+        priority: 5
+        ttl: 10
+        group: "PowerMonitor"
