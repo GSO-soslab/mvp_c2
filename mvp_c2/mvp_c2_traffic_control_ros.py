@@ -30,7 +30,6 @@ class TrafficControlRos(Node):
 
         #load dynamic buffer
         self.load_dynamic_buffer_config()
-
         
         #ros stuff
         self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_tx', self.dccl_tx_callback, 10) #from reporter/commander
@@ -44,6 +43,11 @@ class TrafficControlRos(Node):
     def load_dynamic_buffer_config(self):
         max_size = self.get_parameter('dynamic_buffer.max_total_size').value
 
+        # In __init__
+        self.output_buffer = bytearray()
+        # self.max_frame_size = self.declare_parameter('max_frame_size', 128).value 
+
+        self.max_frame_size = self.get_parameter('max_frame_size').value
         # self.allowed_messages = self.get_parameter('dynamic_buffer.dccl_intake_message_list').value
         msg_list_param = self.get_parameter('dynamic_buffer.dccl_intake_message_list')
 
@@ -96,13 +100,27 @@ class TrafficControlRos(Node):
 
 
     def dccl_pop_data(self):
-        ready_to_send = self.dynamic_buffer.pop()
-        if ready_to_send:
-            out_msg = ByteMultiArray()
-            out_msg.data = bytearray(ready_to_send)
-            self.dccl_tx_pub.publish(out_msg)
+        new_data = self.dynamic_buffer.pop()
 
+        if not new_data:
+            return
+        
+        if self.output_buffer and (len(self.output_buffer) + len(new_data) > self.max_frame_size):
+            self.push_frame()
 
+        # accumulate data
+        self.output_buffer.extend(new_data)
+
+        #if one dccl already exceed the max frame size
+        if len(self.output_buffer) >= self.max_frame_size:
+            self.push_frame()
+        print(len(self.output_buffer), flush=True)
+
+    def push_frame(self):
+        out_msg = ByteMultiArray()
+        out_msg.data = bytearray(self.output_buffer)
+        self.dccl_tx_pub.publish(out_msg)
+        self.output_buffer = bytearray()
 
 def main(args=None):
     rclpy.init(args=args)

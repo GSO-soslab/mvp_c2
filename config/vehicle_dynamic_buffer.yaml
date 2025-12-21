@@ -1,5 +1,8 @@
 reporter/mvp_c2_traffic_control:
   ros__parameters:
+
+    max_frame_size: 50
+
     # --- Buffer Global Settings ---
     dynamic_buffer:
       max_total_size: 150
