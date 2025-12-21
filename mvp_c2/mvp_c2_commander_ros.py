@@ -127,29 +127,29 @@ class MvpC2Commander(Node):
         print("mvp_c2 commander initialized", flush=True)
 
         ##timer for resetting the dccl tx flag
-        self.local_joy_tx_flag = False
-        self.remote_set_controller_tx_flag = False
-        self.remote_set_helm_state_tx_flag = False
-        self.remote_set_ros_launch_tx_flag = False
-        self.remote_set_wpt_tx_flag = False
-        self.remote_set_power_tx_flag = False
-        self.remote_reset_datum_flag = False
+        # self.local_joy_tx_flag = False
+        # self.remote_set_controller_tx_flag = False
+        # self.remote_set_helm_state_tx_flag = False
+        # self.remote_set_ros_launch_tx_flag = False
+        # self.remote_set_wpt_tx_flag = False
+        # self.remote_set_power_tx_flag = False
+        # self.remote_reset_datum_flag = False
 
-        self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
-        self.timer2 = self.create_timer(self.dccl_tx_joy_interval, self.reset_dccl_tx_joy_flag)
-
-
-    def reset_dccl_tx_flag(self):
-        self.remote_set_controller_tx_flag = False
-        self.remote_set_helm_state_tx_flag = False
-        self.remote_set_ros_launch_tx_flag = False
-        self.remote_set_wpt_tx_flag = False
-        self.remote_set_power_tx_flag = False
-        self.remote_reset_datum_flag = False
+    #     self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
+    #     self.timer2 = self.create_timer(self.dccl_tx_joy_interval, self.reset_dccl_tx_joy_flag)
 
 
-    def reset_dccl_tx_joy_flag(self):
-        self.local_joy_tx_flag = False
+    # def reset_dccl_tx_flag(self):
+    #     self.remote_set_controller_tx_flag = False
+    #     self.remote_set_helm_state_tx_flag = False
+    #     self.remote_set_ros_launch_tx_flag = False
+    #     self.remote_set_wpt_tx_flag = False
+    #     self.remote_set_power_tx_flag = False
+    #     self.remote_reset_datum_flag = False
+
+
+    # def reset_dccl_tx_joy_flag(self):
+    #     self.local_joy_tx_flag = False
 
     #######################################################
     ############DCCL parsing###############################
@@ -405,9 +405,9 @@ class MvpC2Commander(Node):
         proto.remote_id = self.remote_id
         proto.axes.extend(msg.axes)  # Map axes
         proto.buttons.extend(msg.buttons)  # Map buttons
-        if self.local_joy_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_joy_tx_flag = True
+        # if self.local_joy_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_joy_tx_flag = True
 
     #set remote controller service callback
     def remote_set_controller_callback(self, request, response):
@@ -421,9 +421,9 @@ class MvpC2Commander(Node):
         proto.status = request.data
         response.success = True
         response.message = 'Service called'
-        if self.remote_set_controller_tx_flag is False:
-            self.publish_dccl(proto)
-            self.remote_set_controller_tx_flag = True
+        # if self.remote_set_controller_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.remote_set_controller_tx_flag = True
         return response        
     
     ##set remote helm state
@@ -443,9 +443,9 @@ class MvpC2Commander(Node):
         # proto.state = request.data
         response.success = True
         response.message = 'Service called'
-        if self.remote_set_helm_state_tx_flag is False:
-            self.publish_dccl(proto)
-            self.remote_set_helm_state_tx_flag = True
+        # if self.remote_set_helm_state_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.remote_set_helm_state_tx_flag = True
         return response        
 
     #set waypoints
@@ -465,14 +465,14 @@ class MvpC2Commander(Node):
                 proto.altitude.append(request.wpt[i].ll_wpt.altitude) 
                 proto.u.append(request.wpt[i].u)
 
-            if self.remote_set_wpt_tx_flag is False:
+            # if self.remote_set_wpt_tx_flag is False:
                 # print(proto, flush=True)
-                self.publish_dccl(proto)
-                self.remote_set_wpt_tx_flag = True
+            self.publish_dccl(proto)
+                # self.remote_set_wpt_tx_flag = True
 
-                response.success = True
-                return response
-            
+            response.success = True
+            return response
+        
             response.success = False
             return response
             
@@ -486,14 +486,14 @@ class MvpC2Commander(Node):
         proto.time = round(time.time(), 3)
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
-        if self.remote_reset_datum_flag is False:
+        # if self.remote_reset_datum_flag is False:
             # print(proto, flush=True)
-            self.publish_dccl(proto)
-            self.remote_reset_datum_flag = True
-            response.success = True
-            return response
-        response.success = False
+        self.publish_dccl(proto)
+            # self.remote_reset_datum_flag = True
+            # response.success = True
         return response
+        # response.success = False
+        # return response
 
     #ros launch request callback
     def roslaunch_srv_callback(self, request, response, index):
@@ -511,10 +511,10 @@ class MvpC2Commander(Node):
         response.success = True
         response.message = msg
 
-        if self.remote_set_ros_launch_tx_flag is False:
-            self.publish_dccl(proto)
-            self.remote_set_ros_launch_tx_flag = True
-        return response   
+        # if self.remote_set_ros_launch_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.remote_set_ros_launch_tx_flag = True
+        # return response   
 
     def set_gpio_callback(self, request, response, index):
         self.dccl_obj.load('SetPowerPort')
@@ -529,9 +529,9 @@ class MvpC2Commander(Node):
         response.success = True
         response.message = msg
 
-        if self.remote_set_power_tx_flag is False:
-            self.publish_dccl(proto)
-            self.remote_set_power_tx_flag = True
+        # if self.remote_set_power_tx_flag is False:
+        self.publish_dccl(proto)
+        # self.remote_set_power_tx_flag = True
         return response   
 
 

@@ -106,22 +106,22 @@ class MvpC2Reporter(Node):
         print("dccl_ros_node initialized", flush=True)
 
         ##timer for resetting the dccl tx flag
-        self.local_odom_tx_flag = False
-        self.local_geopose_tx_flag = False
-        self.local_acomm_geopoint_tx_flag = False
+        # self.local_odom_tx_flag = False
+        # self.local_geopose_tx_flag = False
+        # self.local_acomm_geopoint_tx_flag = False
 
-        self.local_report_controller_state_tx_flag = False
-        self.local_report_helm_state_tx_flag = False
-        self.local_report_wpt_tx_flag = False
-        self.local_report_roslaunch_tx_flag = False
-        self.local_report_gpio_tx_flag = False
-        self.local_power_info_tx_flag = False
-        self.local_cpu_info_tx_flag = False
-        self.local_altimeter_info_tx_flag = False
+        # self.local_report_controller_state_tx_flag = False
+        # self.local_report_helm_state_tx_flag = False
+        # self.local_report_wpt_tx_flag = False
+        # self.local_report_roslaunch_tx_flag = False
+        # self.local_report_gpio_tx_flag = False
+        # self.local_power_info_tx_flag = False
+        # self.local_cpu_info_tx_flag = False
+        # self.local_altimeter_info_tx_flag = False
 
 
 
-        self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
+        # self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
         self.timer2 = self.create_timer(self.dccl_tx_interval, self.report_controller_state_callback)
         self.timer3 = self.create_timer(self.dccl_tx_interval, self.report_helm_state_callback)
         self.timer4 = self.create_timer(self.dccl_tx_interval, self.report_wpt_callback)
@@ -129,19 +129,19 @@ class MvpC2Reporter(Node):
         self.timer5 = self.create_timer(self.dccl_tx_interval, self.report_gpio_callback)
 
 
-    def reset_dccl_tx_flag(self):
-        self.local_odom_tx_flag = False
-        self.local_geopose_tx_flag = False
-        self.local_acomm_geopoint_tx_flag = False
+    # def reset_dccl_tx_flag(self):
+    #     self.local_odom_tx_flag = False
+    #     self.local_geopose_tx_flag = False
+    #     self.local_acomm_geopoint_tx_flag = False
 
-        self.local_report_controller_state_tx_flag = False
-        self.local_report_helm_state_tx_flag = False
-        self.local_report_wpt_tx_flag = False
-        self.local_report_roslaunch_tx_flag = False
-        self.local_report_gpio_tx_flag = False
-        self.local_power_info_tx_flag = False
-        self.local_cpu_info_tx_flag = False
-        self.local_altimeter_info_tx_flag = False
+    #     self.local_report_controller_state_tx_flag = False
+    #     self.local_report_helm_state_tx_flag = False
+    #     self.local_report_wpt_tx_flag = False
+    #     self.local_report_roslaunch_tx_flag = False
+    #     self.local_report_gpio_tx_flag = False
+    #     self.local_power_info_tx_flag = False
+    #     self.local_cpu_info_tx_flag = False
+    #     self.local_altimeter_info_tx_flag = False
 
 
 
@@ -316,9 +316,9 @@ class MvpC2Reporter(Node):
         # proto.frame_id = msg.header.frame_id
         # proto.child_frame_id = msg.child_frame_id
         
-        if self.local_odom_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_odom_tx_flag = True
+        # if self.local_odom_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_odom_tx_flag = True
 
     #geopose callback
     def geopose_callback(self, msg):
@@ -340,9 +340,9 @@ class MvpC2Reporter(Node):
         
         # proto.frame_id = msg.header.frame_id
     
-        if self.local_geopose_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_geopose_tx_flag = True
+        # if self.local_geopose_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_geopose_tx_flag = True
 
     #acomm geopose topic (from usbl)
     def acomm_geopoint_callback(self, msg):
@@ -356,9 +356,9 @@ class MvpC2Reporter(Node):
         proto.longitude = msg.position.longitude*100
         proto.altitude = msg.position.altitude
             
-        if self.local_acomm_geopoint_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_acomm_geopoint_tx_flag = True
+        # if self.local_acomm_geopoint_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_acomm_geopoint_tx_flag = True
 
     #power monitor
     def power_vi_callback(self, msg):
@@ -369,9 +369,9 @@ class MvpC2Reporter(Node):
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
         proto.data.extend([msg.data[0], msg.data[1]])
-        if self.local_power_info_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_power_info_tx_flag = True
+        # if self.local_power_info_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_power_info_tx_flag = True
     
     #cpu monitor
     def cpu_info_callback(self, msg):
@@ -382,9 +382,9 @@ class MvpC2Reporter(Node):
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
         proto.data.extend([ msg.data[0], msg.data[1], msg.data[2]])
-        if self.local_cpu_info_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_cpu_info_tx_flag = True
+        # if self.local_cpu_info_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_cpu_info_tx_flag = True
 
     #altimeter
     def altimeter_callback(self, msg):
@@ -395,45 +395,45 @@ class MvpC2Reporter(Node):
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
         proto.data = msg.point.z
-        if self.local_altimeter_info_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_altimeter_info_tx_flag = True
+        # if self.local_altimeter_info_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_altimeter_info_tx_flag = True
 
     def report_roslaunch_callback(self):
-        if(self.local_report_roslaunch_tx_flag == False):
+        # if(self.local_report_roslaunch_tx_flag == False):
 
-            running_launches = self.roslauncher.list_running_launches()
-            # data = []
-            self.dccl_obj.load('ReportRosLaunch')
-            proto = mvp_cmd_dccl_pb2.ReportRosLaunch()
-            proto.time =round(time.time(), 3)
-            proto.local_id = self.local_id
-            proto.remote_id = self.remote_id
+        running_launches = self.roslauncher.list_running_launches()
+        # data = []
+        self.dccl_obj.load('ReportRosLaunch')
+        proto = mvp_cmd_dccl_pb2.ReportRosLaunch()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
 
-            for index, name in enumerate(self.launch_file_names):
-                key = (self.launch_packages[index], name)
-                if key in running_launches:
-                    proto.state.append(1)
-                    # data.append(True)
-                else:
-                    proto.state.append(0)
-            self.publish_dccl(proto)
-            self.local_report_roslaunch_tx_flag = True
+        for index, name in enumerate(self.launch_file_names):
+            key = (self.launch_packages[index], name)
+            if key in running_launches:
+                proto.state.append(1)
+                # data.append(True)
+            else:
+                proto.state.append(0)
+        self.publish_dccl(proto)
+            # self.local_report_roslaunch_tx_flag = True
     
     ##report GPIO power
     def report_gpio_callback(self):
-        if(self.local_report_gpio_tx_flag == False):
-            if self.local_report_gpio_client.service_is_ready():
-                flag = self.local_report_gpio_client.wait_for_service(timeout_sec=self.ser_wait_time)
-                if flag:
-                    request =Trigger.Request()
-                    future = self.local_report_gpio_client.call_async(request)
-                    future.add_done_callback(self.report_gpio_state_callback_done)
-                # data = []
-                else:
-                    print(f'Service: [{self.local_report_gpio_client.srv_name}] Timeout', flush=True)
+        # if(self.local_report_gpio_tx_flag == False):
+        if self.local_report_gpio_client.service_is_ready():
+            flag = self.local_report_gpio_client.wait_for_service(timeout_sec=self.ser_wait_time)
+            if flag:
+                request =Trigger.Request()
+                future = self.local_report_gpio_client.call_async(request)
+                future.add_done_callback(self.report_gpio_state_callback_done)
+            # data = []
             else:
-                print(f'Service: [{self.local_report_gpio_client.srv_name}] Not available', flush=True)
+                print(f'Service: [{self.local_report_gpio_client.srv_name}] Timeout', flush=True)
+        else:
+            print(f'Service: [{self.local_report_gpio_client.srv_name}] Not available', flush=True)
 
     def report_gpio_state_callback_done(self, future):
         response = future.result()
@@ -451,7 +451,7 @@ class MvpC2Reporter(Node):
                 proto.state.append(int(status))
                 
         self.publish_dccl(proto)
-        self.local_report_gpio_tx_flag = True
+        # self.local_report_gpio_tx_flag = True
 
     #report controller backback
     def report_controller_state_callback(self):
@@ -484,9 +484,9 @@ class MvpC2Reporter(Node):
         proto.remote_id = self.remote_id
         proto.status = response.message == "enabled"
         # print(proto, flush = True)
-        if self.local_report_controller_state_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_report_controller_state_tx_flag = True
+        # if self.local_report_controller_state_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_report_controller_state_tx_flag = True
         return response      
 
 
@@ -533,10 +533,10 @@ class MvpC2Reporter(Node):
         proto.connected_state.extend(indices) 
 
         # print(proto, flush = True)
-        if self.local_report_helm_state_tx_flag is False:
-            self.publish_dccl(proto)
+        # if self.local_report_helm_state_tx_flag is False:
+        self.publish_dccl(proto)
             # print(proto, flush = True)
-            self.local_report_helm_state_tx_flag = True
+            # self.local_report_helm_state_tx_flag = True
         return response   
     
     def report_wpt_callback(self):
@@ -576,15 +576,15 @@ class MvpC2Reporter(Node):
             proto.u.append(response.wpt[i].u)
             # print (i)                           
 
-        if self.local_report_wpt_tx_flag is False:
+        # if self.local_report_wpt_tx_flag is False:
             # dccl_msg = ByteMultiArray()
             # dccl_msg.data = self.dccl_obj.encode(proto)
             # dccl_msg.data = package_dccl(dccl_msg.data)
             # print(len(dccl_msg.data))
             # print(dccl_msg.data, flush=True)
-            self.publish_dccl(proto)
+        self.publish_dccl(proto)
             # print(proto, flush = True)
-            self.local_report_wpt_tx_flag = True
+            # self.local_report_wpt_tx_flag = True
         return response   
 
 def main(args=None):

@@ -1,7 +1,7 @@
 import os
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import ByteMultiArray
+from std_msgs.msg import ByteMultiArray, String
 from ament_index_python.packages import get_package_share_directory
 import dccl
 import mvp_cmd_dccl_pb2
@@ -32,19 +32,24 @@ class TrafficControlRos(Node):
         self.load_dynamic_buffer_config()
         
         #ros stuff
-        self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_tx', self.dccl_tx_callback, 10) #from reporter/commander
-        self.dccl_rx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_rx', self.dccl_rx_callback, 10) #from hardware
+        self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_tx', self.dccl_tx_callback, 1) #from reporter/commander
+        self.dccl_rx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_rx', self.dccl_rx_callback, 1) #from hardware
 
         self.dccl_tx_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_controlled_tx', 10)  #to hardware
+        self.dccl_tx_msg_pub = self.create_publisher(String, 'mvp_c2/traffic_control/dccl_msg_controlled_tx_names', 10)  #to hardware (dccl message name string array)
+
         self.dccl_rx_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_controlled_rx', 10)  #to reporter/commander
 
-        self.create_timer(0.1, self.dccl_pop_data)
+        self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
     
     def load_dynamic_buffer_config(self):
         max_size = self.get_parameter('dynamic_buffer.max_total_size').value
 
-        # In __init__
+        buffer_overflow_remove_by_time = self.get_parameter('dynamic_buffer.overflow_remove_by_time').value
+
+        # BUffering parameter
         self.output_buffer = bytearray()
+        self.output_msg_names = "" # This will track the names
         # self.max_frame_size = self.declare_parameter('max_frame_size', 128).value 
 
         self.max_frame_size = self.get_parameter('max_frame_size').value
@@ -56,7 +61,7 @@ class TrafficControlRos(Node):
         if not self.allowed_messages:
             self.get_logger().warn("No messages found in 'dccl_intake_message_list'. Buffer will be idle.")
             self.message_rules = {}
-            self.dynamic_buffer = DynamicBufferPython(max_total_size=max_size)
+            self.dynamic_buffer = DynamicBufferPython(max_total_size=max_size, drop_by_time = buffer_overflow_remove_by_time)
             return
 
         self.message_rules = {}
@@ -85,6 +90,7 @@ class TrafficControlRos(Node):
             # Peek at type
             decoded_obj = self.dccl_codec.decode(dccl_payload)
             msg_name = decoded_obj.DESCRIPTOR.name 
+            # self.get_logger().info(f"Processing DCCL message: {msg_name}")
 
             if msg_name in self.message_rules:
                 rules = self.message_rules[msg_name]
@@ -100,7 +106,7 @@ class TrafficControlRos(Node):
 
 
     def dccl_pop_data(self):
-        new_data = self.dynamic_buffer.pop()
+        new_data, msg_name = self.dynamic_buffer.pop()
 
         if not new_data:
             return
@@ -110,17 +116,28 @@ class TrafficControlRos(Node):
 
         # accumulate data
         self.output_buffer.extend(new_data)
+        if msg_name:
+            if self.output_msg_names == "":
+                self.output_msg_names = msg_name
+            else:
+                self.output_msg_names += f", {msg_name}" # Add separator
 
         #if one dccl already exceed the max frame size
         if len(self.output_buffer) >= self.max_frame_size:
             self.push_frame()
-        print(len(self.output_buffer), flush=True)
 
     def push_frame(self):
         out_msg = ByteMultiArray()
         out_msg.data = bytearray(self.output_buffer)
         self.dccl_tx_pub.publish(out_msg)
+        # self.get_logger().info(f"Buffer data length: {len(out_msg.data)}")
+
+        name_msg = String()
+        name_msg.data = self.output_msg_names
+        self.dccl_tx_msg_pub.publish(name_msg)
+        #reset the buffer 
         self.output_buffer = bytearray()
+        self.output_msg_names = ""
 
 def main(args=None):
     rclpy.init(args=args)
