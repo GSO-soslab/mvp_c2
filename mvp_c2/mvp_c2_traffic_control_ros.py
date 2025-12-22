@@ -68,7 +68,9 @@ class TrafficControlRos(Node):
             return
 
         self.message_rules = {}
+        print("loading dccl message for dynamic buffer")
         for msg_name in self.allowed_messages:
+            print(msg_name, flush = True)
             self.dccl_codec.load(msg_name) #load proto data
             self.message_rules[msg_name] = {
                 'priority': self.get_parameter(f'message_rules.{msg_name}.priority').value,

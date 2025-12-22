@@ -61,7 +61,7 @@ class MvpC2Commander(Node):
 
         # mvp_active meaning the local machine has mvp running so it can transfer its mvp related 
         ##publish information parsed from dccl to ros topic
-        topic_prefix = 'remote/id_' + str(self.remote_id)
+        topic_prefix = 'mvp_c2_commander/remote/id_' + str(self.remote_id)
         self.remote_odom_pub = self.create_publisher(Odometry, topic_prefix + '/odometry', 10)
         self.remote_geopose_pub = self.create_publisher(GeoPoseStamped, topic_prefix + '/geopose', 10)
         self.remote_acomm_navsat_pub = self.create_publisher(NavSatFix, topic_prefix + '/acomm/navsatfix', 10)
