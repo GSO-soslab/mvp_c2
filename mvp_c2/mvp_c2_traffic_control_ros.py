@@ -89,14 +89,13 @@ class TrafficControlRos(Node):
         for i in range(len(data)):
             dccl_msg.append(data[i])
 
-            if len(dccl_msg) >= 4 and dccl_msg[-4] == 42: #the four last chars are *AB\n
+            if len(dccl_msg) >= 4 and dccl_msg[-4] == 42 and dccl_msg[-1]==ord('\n'): #the four last chars are *AB\n
                 msg = ByteMultiArray()
                 msg.data = dccl_msg
                 # print(msg.data)
                 # print(f'received:{len(msg.data)}', flush=True)
                 self.dccl_rx_pub.publish(msg)
                 print("publishing", flush = True)
-                
                 dccl_msg = bytearray()
 
         # self.dccl_rx_pub.publihs(msg)
