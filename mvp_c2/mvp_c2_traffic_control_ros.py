@@ -1,9 +1,11 @@
 import os
 import rclpy
+from rclpy.duration import Duration
 from rclpy.node import Node
 from std_msgs.msg import ByteMultiArray, String
 from ament_index_python.packages import get_package_share_directory
 import dccl
+import time
 import mvp_cmd_dccl_pb2
 from ament_index_python.packages import get_package_share_directory
 from include.dynamic_buffer import DynamicBufferPython
@@ -41,7 +43,18 @@ class TrafficControlRos(Node):
 
         self.dccl_rx_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_controlled_rx', 10)  #to reporter/commander
 
-        self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
+        # self.tx_interval = self.get_parameter('tx_interval').value
+        # self.tx_msg_construction_timeout = self.get_parameter('tx_msg_construction_timeout').value
+
+        self.tx_interval = self.get_parameter_or(
+            'tx_interval', 1.0
+        ).value
+
+        self.tx_msg_construction_timeout = self.get_parameter_or(
+            'tx_msg_construction_timeout', 0.5
+        ).value
+
+        self.create_timer(self.tx_interval, self.dccl_pop_data) #pop data fequency
     
     def load_dynamic_buffer_config(self):
 
@@ -129,25 +142,48 @@ class TrafficControlRos(Node):
 
 
     def dccl_pop_data(self):
-        new_data, msg_name = self.dynamic_buffer.pop()
 
-        if not new_data:
-            return
+        start_time = time.time()
+        timeout = self.tx_msg_construction_timeout
+        print("poping_data", flush= True)
+
+        while True:
+            #get data
+            if time.time() - start_time >= timeout:
+                self.push_frame()
+                break
+
+            new_data, msg_name = self.dynamic_buffer.pop()
+
+            if not new_data:
+                continue
+            
+            #if new data will saturate by buffer
+            if self.output_buffer and (len(self.output_buffer) + len(new_data) > self.max_frame_size):
+                self.push_frame()
+                # log the data for the next time
+                self.output_buffer.extend(new_data)
+                if msg_name:
+                    if self.output_msg_names == "":
+                        self.output_msg_names = msg_name
+                    else:
+                        self.output_msg_names += f", {msg_name}" # Add separator
+                break
+            
+            #regular loop accumulating data
+            self.output_buffer.extend(new_data)
+            if msg_name:
+                if self.output_msg_names == "":
+                    self.output_msg_names = msg_name
+                else:
+                    self.output_msg_names += f", {msg_name}" # Add separator
         
-        if self.output_buffer and (len(self.output_buffer) + len(new_data) > self.max_frame_size):
-            self.push_frame()
+            #if one dccl already exceed the max frame size
+            if len(self.output_buffer) >= self.max_frame_size:
+                self.push_frame()
+                break
 
-        # accumulate data
-        self.output_buffer.extend(new_data)
-        if msg_name:
-            if self.output_msg_names == "":
-                self.output_msg_names = msg_name
-            else:
-                self.output_msg_names += f", {msg_name}" # Add separator
-
-        #if one dccl already exceed the max frame size
-        if len(self.output_buffer) >= self.max_frame_size:
-            self.push_frame()
+            
 
     def push_frame(self):
         out_msg = ByteMultiArray()
