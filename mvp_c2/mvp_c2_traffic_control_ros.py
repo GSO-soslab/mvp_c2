@@ -81,7 +81,25 @@ class TrafficControlRos(Node):
         self.dynamic_buffer = DynamicBufferPython(max_total_size=max_size)
     
     def dccl_rx_callback(self, msg):
-        self.dccl_rx_pub.publihs(msg)
+        print("Parsing msg into multiple dccl msgs")
+        data = bytearray(ord(c) for c in msg.data) 
+
+        dccl_msg = bytearray([])
+
+        for i in range(len(data)):
+            dccl_msg = dccl_msg.extend(data[i])
+
+            if len(dccl_msg) >= 4 and dccl_msg[-4] == 42: #the four last chars are *AB\n
+                msg = ByteMultiArray()
+                msg.data = dccl_msg
+                # print(msg.data)
+                # print(f'received:{len(msg.data)}', flush=True)
+                self.ddcl_rx_pub.publish(msg)
+                print("publishing", flush = True)
+                
+                dccl_msg = bytearray([])
+
+        # self.dccl_rx_pub.publihs(msg)
         # print("check which hardware was")
         print("Forward to reporter/commander", flush=True)
 

@@ -51,51 +51,20 @@ class MvpC2UdpRos(Node):
         except Exception as e:
             print(f"Error in dccl_tx_callback: {e}", flush = True)
 
-    # def dccl_rx_callback(self):
-    #     while self.running:
-    #         data = bytearray([])
-    #         try:
-    #             data = self.udp_obj.read()
-    #             if(data is not None):
-    #                 msg = ByteMultiArray()
-    #                 msg.data = data
-    #                 # print("publishing", flush = True)
-    #                 self.ddcl_rx_pub.publish(msg)
-    #         except Exception as e:
-    #             print(f"Error in dccl_rx_callback: {e}", flush = True)
-    #             break
     def dccl_rx_callback(self):
-        buffer = bytearray()
         while self.running:
+            data = bytearray([])
             try:
                 data = self.udp_obj.read()
-                
-                if not data:
-                    continue
-                    
-                buffer.extend(data)
-                print(f"buffer length: {len(buffer)}", flush=True)
-
-                #empty byte array for dccl message
-                dccl_msg = bytearray([])
-
-                for i in range(len(buffer)):
-                    c_data = buffer[i]
-                    dccl_msg = dccl_msg.extend(c_data)
-
-                    if len(msg) >= 4 and msg[-4] == 42: #the four last chars are *AB\n
-                        msg = ByteMultiArray()
-                        msg.data = dccl_msg
-                        # print(msg.data)
-                        # print(f'received:{len(msg.data)}', flush=True)
-                        self.ddcl_rx_pub.publish(msg)
-                        print("publishing", flush = True)
-                        
-                        dccl_msg = bytearray([])
-
+                if(data is not None):
+                    msg = ByteMultiArray()
+                    msg.data = data
+                    # print("publishing", flush = True)
+                    self.ddcl_rx_pub.publish(msg)
             except Exception as e:
-                print(f"Error in dccl_rx_callback: {e}", flush=True)
+                print(f"Error in dccl_rx_callback: {e}", flush = True)
                 break
+
 
 
     def close_udp(self):
