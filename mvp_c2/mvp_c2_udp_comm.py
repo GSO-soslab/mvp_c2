@@ -51,19 +51,68 @@ class MvpC2UdpRos(Node):
         except Exception as e:
             print(f"Error in dccl_tx_callback: {e}", flush = True)
 
+    # def dccl_rx_callback(self):
+    #     while self.running:
+    #         data = bytearray([])
+    #         try:
+    #             data = self.udp_obj.read()
+    #             if(data is not None):
+    #                 msg = ByteMultiArray()
+    #                 msg.data = data
+    #                 # print("publishing", flush = True)
+    #                 self.ddcl_rx_pub.publish(msg)
+    #         except Exception as e:
+    #             print(f"Error in dccl_rx_callback: {e}", flush = True)
+    #             break
     def dccl_rx_callback(self):
+        buffer = bytearray()
+
         while self.running:
-            data = bytearray([])
             try:
                 data = self.udp_obj.read()
-                if(data is not None):
+                if not data:
+                    continue
+
+                buffer.extend(data)
+
+                while True:
+                    # Find start
+                    start = buffer.find(b'$$')
+                    if start == -1:
+                        buffer.clear()
+                        break
+
+                    # Find newline AFTER start
+                    end = buffer.find(b'\n', start)
+                    if end == -1:
+                        buffer = buffer[start:]
+                        break
+
+                    # Need at least "*XX\n" → 4 bytes
+                    if end - start < 4:
+                        buffer = buffer[start:]
+                        break
+
+                    # Exact terminator check
+                    if buffer[end - 3] != ord('*'):
+                        # Invalid frame → skip this '$$' and resync
+                        buffer = buffer[start + 2:]
+                        continue
+
+                    # Extract full message
+                    msg_bytes = buffer[start:end + 1]
+
+                    # Remove consumed bytes
+                    buffer = buffer[end + 1:]
+
                     msg = ByteMultiArray()
-                    msg.data = data
-                    # print("publishing", flush = True)
+                    msg.data = msg_bytes
                     self.ddcl_rx_pub.publish(msg)
+
             except Exception as e:
-                print(f"Error in dccl_rx_callback: {e}", flush = True)
+                print(f"Error in dccl_rx_callback: {e}", flush=True)
                 break
+
 
     def close_udp(self):
         self.running = False
