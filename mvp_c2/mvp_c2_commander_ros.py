@@ -185,12 +185,12 @@ class MvpC2Commander(Node):
             message_id = self.dccl_obj.id(data)
             # print(message_id, flush = True)
             print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
-            #odometry 
-            if self.dccl_obj.remote_id(data) == self.local_id:
 
+            proto_msg = self.dccl_obj.decode(data)
+            if proto_msg.remote_id == self.local_id:
+                #odometry 
                 if message_id == 3:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
                         # print(decoded_msg, flush = True)
                         msg = Odometry()
                         sec = int(proto_msg.time)  
@@ -229,7 +229,7 @@ class MvpC2Commander(Node):
                 #geopose
                 if message_id == 4:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         # print(decoded_msg, flush = True)
                         msg = GeoPoseStamped()
                         sec = int(proto_msg.time)  
@@ -268,7 +268,7 @@ class MvpC2Commander(Node):
                 ##Power info message
                 if message_id == 5:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         #call the service and make the dccl msg
                         msg = Float32MultiArray()
                         msg.data = [proto_msg.data[0], proto_msg.data[1]]
@@ -280,7 +280,7 @@ class MvpC2Commander(Node):
                 ##CPU info message
                 if message_id == 6:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         #call the service and make the dccl msg
                         msg = Float32MultiArray()
                         msg.data = [proto_msg.data[0], proto_msg.data[1], proto_msg.data[2]]
@@ -292,7 +292,7 @@ class MvpC2Commander(Node):
                 ##ALtimeter pointstamped
                 if message_id ==7:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         msg = PointStamped()
                         sec = int(proto_msg.time)  
                         nanosec = int((proto_msg.time - sec) * 1e9)  
@@ -308,7 +308,7 @@ class MvpC2Commander(Node):
                 ##acomm geopoint pointstamped
                 if message_id ==8:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         msg = NavSatFix()
                         sec = int(proto_msg.time)  
                         nanosec = int((proto_msg.time - sec) * 1e9)  
@@ -329,7 +329,7 @@ class MvpC2Commander(Node):
                 ##report controller message
                 if message_id == 23:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         #call the service and make the dccl msg
                         msg = Bool()
                         msg.data = proto_msg.status
@@ -341,7 +341,7 @@ class MvpC2Commander(Node):
                 ##report helm
                 if message_id == 31:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         msg = HelmState()
                         msg.name = self.default_state_list[proto_msg.state]
                         msg.transitions = [self.default_state_list[i] for i in proto_msg.connected_state]
@@ -354,7 +354,7 @@ class MvpC2Commander(Node):
                 if message_id == 33:
                     # print("got Wpt", flush =True)
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         msg = Waypoints()
                         sec = int(proto_msg.time)  
                         nanosec = int((proto_msg.time - sec) * 1e9)  
@@ -376,7 +376,7 @@ class MvpC2Commander(Node):
                 # report roslaunch status
                 if message_id == 41:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         msg = Int16MultiArray()
                         msg.data = proto_msg.state
                         self.remote_roslaunch_report_pub.publish(msg)
@@ -388,7 +388,7 @@ class MvpC2Commander(Node):
                 #report set power status
                 if message_id == 21:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         msg = Int16MultiArray()
                         msg.data = proto_msg.state
                         self.remote_gpio_power_report_pub.publish(msg)

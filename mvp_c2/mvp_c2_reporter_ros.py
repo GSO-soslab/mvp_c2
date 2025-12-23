@@ -181,12 +181,13 @@ class MvpC2Reporter(Node):
             print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
 
             #get the remote id
-            if self.dccl_obj.remote_id(data) == self.local_id:
+            proto_msg = self.dccl_obj.decode(data)
+            if proto_msg.remote_id == self.local_id:
                 # print(message_id, flush = True)
                 #Joy
                 if message_id == 1:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         # print(decoded_msg, flush = True)
                         msg = Joy()
                         sec = int(proto_msg.time)  
@@ -203,7 +204,7 @@ class MvpC2Reporter(Node):
                 #set controller
                 if message_id ==22:
                     try: 
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         self.local_set_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
                         request = SetBool.Request()
                         request.data = proto_msg.status
@@ -219,7 +220,7 @@ class MvpC2Reporter(Node):
                 if message_id == 30:
                     # print("got change helm ", flush = True)
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         # print(proto_msg, flush = True)
                         self.local_set_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
 
@@ -236,7 +237,7 @@ class MvpC2Reporter(Node):
                 #roslaunch request
                 if message_id == 40: 
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         index = proto_msg.index
                         req = proto_msg.req
                         print(f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {req}", flush = True)
@@ -251,7 +252,7 @@ class MvpC2Reporter(Node):
                 #set power request
                 if message_id == 20:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         index = proto_msg.index
                         request = SetBool.Request()
                         request.data = proto_msg.state
@@ -265,7 +266,7 @@ class MvpC2Reporter(Node):
                 ##waypoint set dccl
                 if message_id == 32:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         self.local_set_wpt_client.wait_for_service(timeout_sec=self.ser_wait_time)
 
                         request = SendWaypoints.Request()  
@@ -285,7 +286,7 @@ class MvpC2Reporter(Node):
                 ##reset datum
                 if message_id == 34:
                     try:
-                        proto_msg = self.dccl_obj.decode(data)
+                        # proto_msg = self.dccl_obj.decode(data)
                         self.local_reset_datum_client.wait_for_service(timeout_sec=self.ser_wait_time)
                         request = Trigger.Request()  
                         future = self.local_reset_datum_client.call_async(request)
