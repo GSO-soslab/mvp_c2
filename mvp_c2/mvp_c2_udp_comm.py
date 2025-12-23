@@ -79,7 +79,7 @@ class MvpC2UdpRos(Node):
                 #empty byte array for dccl message
                 dccl_msg = bytearray([])
 
-                while i < len(buffer):
+                for i in range(len(buffer)):
                     c_data = buffer[i]
                     dccl_msg = dccl_msg + c_data
 
