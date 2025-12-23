@@ -517,6 +517,7 @@ class MvpC2Commander(Node):
         proto.index = index
         proto.req = request.data
 
+        # print("service called")
         msg = f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {request.data}"
         # Process request and prepare response
         response.success = True
@@ -525,7 +526,7 @@ class MvpC2Commander(Node):
         # if self.remote_set_ros_launch_tx_flag is False:
         self.publish_dccl(proto)
             # self.remote_set_ros_launch_tx_flag = True
-        # return response   
+        return response   
 
     def set_gpio_callback(self, request, response, index):
         proto = mvp_cmd_dccl_pb2.SetPowerPort()
