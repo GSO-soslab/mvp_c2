@@ -124,7 +124,7 @@ class MvpC2Commander(Node):
                                          'mvp_cmd_dccl.proto') )
         
         self.dccl_obj = dccl.Codec()
-        self.load_dccl
+        self.load_dccl()
         print("mvp_c2 commander initialized", flush=True)
 
         ##timer for resetting the dccl tx flag
