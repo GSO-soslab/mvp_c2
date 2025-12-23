@@ -66,13 +66,14 @@ class MvpC2UdpRos(Node):
     #             break
     def dccl_rx_callback(self):
         buffer = bytearray()
-
         while self.running:
             try:
                 data = self.udp_obj.read()
+                
                 if not data:
                     continue
-
+                print("data received", flush=True)  
+                    
                 buffer.extend(data)
 
                 while True:
