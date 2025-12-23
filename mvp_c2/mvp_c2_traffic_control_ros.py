@@ -95,7 +95,7 @@ class TrafficControlRos(Node):
                 # print(msg.data)
                 # print(f'received:{len(msg.data)}', flush=True)
                 self.dccl_rx_pub.publish(msg)
-                print("publishing", flush = True)
+                # print("publishing", flush = True)
                 dccl_msg = bytearray()
 
         # self.dccl_rx_pub.publihs(msg)
