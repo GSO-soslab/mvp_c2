@@ -84,7 +84,7 @@ class TrafficControlRos(Node):
         print("Parsing msg into multiple dccl msgs")
         data = bytearray(ord(c) for c in msg.data) 
 
-        dccl_msg = bytearray([])
+        dccl_msg = bytearray()
 
         for i in range(len(data)):
             dccl_msg = dccl_msg.append(data[i])
@@ -97,7 +97,7 @@ class TrafficControlRos(Node):
                 self.ddcl_rx_pub.publish(msg)
                 print("publishing", flush = True)
                 
-                dccl_msg = bytearray([])
+                dccl_msg = bytearray()
 
         # self.dccl_rx_pub.publihs(msg)
         # print("check which hardware was")
