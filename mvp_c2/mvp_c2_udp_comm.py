@@ -81,7 +81,7 @@ class MvpC2UdpRos(Node):
 
                 for i in range(len(buffer)):
                     c_data = buffer[i]
-                    dccl_msg = dccl_msg + c_data
+                    dccl_msg = dccl_msg.extend(c_data)
 
                     if len(msg) >= 4 and msg[-4] == 42: #the four last chars are *AB\n
                         msg = ByteMultiArray()
