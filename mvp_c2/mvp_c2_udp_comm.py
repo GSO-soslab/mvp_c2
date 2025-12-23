@@ -72,43 +72,26 @@ class MvpC2UdpRos(Node):
                 
                 if not data:
                     continue
-                print("data received", flush=True)  
                     
                 buffer.extend(data)
+                print(f"buffer length: {len(buffer)}", flush=True)
 
-                while True:
-                    # Find start
-                    start = buffer.find(b'$$')
-                    if start == -1:
-                        buffer.clear()
-                        break
+                #empty byte array for dccl message
+                dccl_msg = bytearray([])
 
-                    # Find newline AFTER start
-                    end = buffer.find(b'\n', start)
-                    if end == -1:
-                        buffer = buffer[start:]
-                        break
+                while i < len(buffer):
+                    c_data = buffer[i]
+                    dccl_msg = dccl_msg + c_data
 
-                    # Need at least "*XX\n" → 4 bytes
-                    if end - start < 4:
-                        buffer = buffer[start:]
-                        break
-
-                    # Exact terminator check
-                    if buffer[end - 3] != ord('*'):
-                        # Invalid frame → skip this '$$' and resync
-                        buffer = buffer[start + 2:]
-                        continue
-
-                    # Extract full message
-                    msg_bytes = buffer[start:end + 1]
-
-                    # Remove consumed bytes
-                    buffer = buffer[end + 1:]
-
-                    msg = ByteMultiArray()
-                    msg.data = msg_bytes
-                    self.ddcl_rx_pub.publish(msg)
+                    if len(msg) >= 4 and msg[-4] == 42: #the four last chars are *AB\n
+                        msg = ByteMultiArray()
+                        msg.data = dccl_msg
+                        # print(msg.data)
+                        # print(f'received:{len(msg.data)}', flush=True)
+                        self.ddcl_rx_pub.publish(msg)
+                        print("publishing", flush = True)
+                        
+                        dccl_msg = bytearray([])
 
             except Exception as e:
                 print(f"Error in dccl_rx_callback: {e}", flush=True)
