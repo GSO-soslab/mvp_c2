@@ -87,7 +87,7 @@ class TrafficControlRos(Node):
         dccl_msg = bytearray([])
 
         for i in range(len(data)):
-            dccl_msg = dccl_msg.extend(data[i])
+            dccl_msg = dccl_msg.append(data[i])
 
             if len(dccl_msg) >= 4 and dccl_msg[-4] == 42: #the four last chars are *AB\n
                 msg = ByteMultiArray()
