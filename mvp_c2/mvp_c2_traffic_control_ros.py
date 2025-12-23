@@ -81,8 +81,9 @@ class TrafficControlRos(Node):
         self.dynamic_buffer = DynamicBufferPython(max_total_size=max_size)
     
     def dccl_rx_callback(self, msg):
-        print("check which hardware was")
-        print("Forward to reporter/commander")
+        self.dccl_rx_pub.publihs(msg)
+        # print("check which hardware was")
+        print("Forward to reporter/commander", flush=True)
 
     def dccl_tx_callback(self, msg):
         try:
