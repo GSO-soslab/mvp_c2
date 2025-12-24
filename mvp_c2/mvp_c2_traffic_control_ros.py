@@ -182,11 +182,11 @@ class TrafficControlRos(Node):
 
             if len(dccl_msg) >= 4 and dccl_msg[-4] == 42 and dccl_msg[-1]==ord('\n'): #the four last chars are *AB\n
                 #check and peak the message
-                flag, data = check_dccl(dccl_msg)
-                message_id = self.dccl_codec.id(data)
+                flag, cdata = check_dccl(dccl_msg)
+                message_id = self.dccl_codec.id(cdata)
                 #if it is master sync message i will update the tdma setting
                 if flag and message_id == 51:
-                    self.tdma_slave_update(data)
+                    self.tdma_slave_update(cdata)
                 #message will still be published so we can bag
                 msg = ByteMultiArray()
                 msg.data = dccl_msg
