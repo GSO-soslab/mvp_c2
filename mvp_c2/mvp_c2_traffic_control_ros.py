@@ -9,6 +9,7 @@ import time
 import mvp_cmd_dccl_pb2
 from ament_index_python.packages import get_package_share_directory
 from include.dynamic_buffer import DynamicBufferPython
+from include.dccl_checksum import package_dccl, check_dccl
 from google.protobuf import descriptor_pool
 
 
@@ -56,6 +57,86 @@ class TrafficControlRos(Node):
 
         self.create_timer(self.tx_interval, self.dccl_pop_data) #pop data fequency
     
+    def load_tdma_config(self):
+        #tdma starts in sync slot.
+        #the master will broadcast messages.
+        #Future the slave will response to the message in sequence, each one has time interval slot_duration/num_slots?
+        # so we can adapt the slot 
+        
+        self.tdma_slot_id = self.get_parameter('tdma.slot_id').value
+        self.tdma_role = self.get_parameter('tdma.tdma_role').value
+        
+        self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
+        self.tdma_num_slots = self.get_parameter_or('tdma.num_slots', 1 ).value  
+        self.tdma_slot_guard_time_ms = self.get_parameter_or('tdma.slot_guard_time_ms', 0).value  
+        #the sync message will be set after n frames
+        self.tdma_sync_slot_interval = self.get_parameter_or('tdma.tdma_sync_slot_interval', -1).value
+        #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
+        self.tdma_sync_msg_repeat_num = self.get_parameter_or('tdma.tdma_sync_msg_repeat_num', 0).value   
+        #if sync happens the tdma time can be reset 
+            
+        self.tdma_flag = False
+        self.tdma_in_slot = True
+
+    def master_sync_slot(self):
+
+        self.tdma_flag = False
+        #reset tdma start_time
+        self.tdma_start_time = round(time.time(), 1) 
+        
+        #prepare the msg except the time
+        self.dccl_codec.load('TdmaMasterSyncMsg')
+        proto = mvp_cmd_dccl_pb2.TdmaMasterSyncMsg()
+        proto.start_time = self.tdma_start_time
+        proto.sync_slot_interval = self.tdma_sync_slot_interval
+        proto.slot_duration = self.tdma_slot_duration
+        proto.slot_guard_time_ms = self.tdma_slot_guard_time_ms
+        proto.num_slots = self.tdma_num_slots
+        proto.slot_id = self.tdma_slot_id
+
+        #compute the delay between messages
+        #|--------------slot---------------|
+        #|guard_time|msg|msg|msg|guard_time|
+        sync_msg_interval = (self.tdma_slot_duration-2*self.tdma_slot_guard_time_ms/1000)/self.tdma_sync_msg_repeat_num
+        sync_msg_start_t  = self.tdma_start_time + self.tdma_slot_guard_time_ms/1000 
+        #wait for the guard time
+        while time.time() < sync_msg_start_t:
+            time.sleep(0.001)
+
+        for i in range(self.tdma_sync_msg_repeat_num):
+            proto.time = round(time.time(), 1)
+            msg_send_time = sync_msg_start_t + sync_msg_interval*(i+1)
+            while time.time() <  msg_send_time:
+                time.sleep(0.001)
+            #send the message
+            dccl_msg = self.dccl_codec.encode(proto)
+            dccl_msg = package_dccl(dccl_msg.data)
+            self.output_buffer.extend(dccl_msg)
+            self.output_msg_names += f", {'TdmaMasterSyncMsg'}" 
+            self.push_frame()    
+        
+        self.tdma_setup()
+
+    def tdma_slave_update(self,data):
+        #decode the data
+        proto_msg = self.dccl_codec.decode(data)
+        host_time = proto_msg.time #use for time sync
+
+        self.tdma_start_time = proto_msg.start_time
+        self.tdma_sync_slot_interval = proto_msg.sync_slot_interval
+        self.tdma_slot_duration = proto_msg.slot_duration
+        self.tdma_slot_guard_time_ms = proto_msg.slot_guard_time_ms
+        self.tdma_num_slots = proto_msg.num_slots
+
+        self.tdma_setup()
+
+    def tdma_setup(self):
+        #setup tdma
+        self.tdma_flag = True
+
+    def tdma_in_slot_check(slef):
+       print("check tdma slots")
+
     def load_dynamic_buffer_config(self):
 
         max_size = self.get_parameter('dynamic_buffer.max_total_size').value
@@ -103,18 +184,18 @@ class TrafficControlRos(Node):
             dccl_msg.append(data[i])
 
             if len(dccl_msg) >= 4 and dccl_msg[-4] == 42 and dccl_msg[-1]==ord('\n'): #the four last chars are *AB\n
+                #check and peak the message
+                flag, data = check_dccl(dccl_msg)
+                message_id = self.dccl_obj.id(data)
+                #if it is master sync message i will update the tdma setting
+                if flag and message_id == 51:
+                    self.tdma_slave_update(data)
+                #message will still be published so we can bag
                 msg = ByteMultiArray()
                 msg.data = dccl_msg
-                # print(msg.data)
-                # print(f'received:{len(msg.data)}', flush=True)
                 self.dccl_rx_pub.publish(msg)
-                # print("publishing", flush = True)
                 dccl_msg = bytearray()
-
-        # self.dccl_rx_pub.publihs(msg)
-        # print("check which hardware was")
-        # print("Forward to reporter/commander", flush=True)
-
+                 
     def dccl_tx_callback(self, msg):
         try:
             raw_bytes = bytearray(ord(c) for c in msg.data)
@@ -140,7 +221,6 @@ class TrafficControlRos(Node):
         except Exception as e:
             self.get_logger().error(f"Failed to process DCCL intake: {e}")
 
-
     def dccl_pop_data(self):
 
         start_time = time.time()
@@ -160,14 +240,14 @@ class TrafficControlRos(Node):
             
             #if new data will saturate by buffer
             if self.output_buffer and (len(self.output_buffer) + len(new_data) > self.max_frame_size):
-                self.push_frame()
-                # log the data for the next time
-                self.output_buffer.extend(new_data)
                 if msg_name:
                     if self.output_msg_names == "":
                         self.output_msg_names = msg_name
                     else:
                         self.output_msg_names += f", {msg_name}" # Add separator
+                self.push_frame()
+                # log the data for the next time
+                self.output_buffer.extend(new_data)
                 break
             
             #regular loop accumulating data
@@ -182,8 +262,6 @@ class TrafficControlRos(Node):
             if len(self.output_buffer) >= self.max_frame_size:
                 self.push_frame()
                 break
-
-            
 
     def push_frame(self):
         out_msg = ByteMultiArray()

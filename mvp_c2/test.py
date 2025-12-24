@@ -1,19 +1,19 @@
-def load_dccl(self):
-    self.dccl_obj.load('Joy')
-    self.dccl_obj.load('SetController')
-    self.dccl_obj.load('SetHelm')
-    self.dccl_obj.load('RosLaunch')
-    self.dccl_obj.load('SetPowerPort')
-    self.dccl_obj.load('SetWpt')
-    self.dccl_obj.load('ResetDatum')
-    self.dccl_obj.load('Odometry')
-    self.dccl_obj.load('GeoPose')
-    self.dccl_obj.load('AcommGeoPoint')
-    self.dccl_obj.load('PowerMonitor')
-    self.dccl_obj.load('CPUMonitor')
-    self.dccl_obj.load('AltimeterPointStamped')
-    self.dccl_obj.load('ReportRosLaunch')
-    self.dccl_obj.load('ReportPowerPort')
-    self.dccl_obj.load('ReportController')
-    self.dccl_obj.load('ReportHelm')
-    self.dccl_obj.load('ReportWpt')
+node = TDMANode(node_id=0, role="master", tdma_cfg=cfg["tdma"], slots=[0])
+
+while True:
+    if node.should_send_sync():
+        msg = node.master_sync_message()
+        tx(msg)  # <-- your transport
+    time.sleep(0.01)
+
+
+
+node = TDMANode(node_id=1, role="slave", tdma_cfg=cfg["tdma"], slots=[1])
+
+def on_sync(msg):
+    node.handle_sync(msg)
+
+while True:
+    if node.in_my_slot():
+        send_data()
+    time.sleep(0.001)
