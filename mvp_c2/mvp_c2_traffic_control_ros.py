@@ -69,16 +69,17 @@ class TrafficControlRos(Node):
         # so we can adapt the slot 
         
         self.tdma_slot_id = self.get_parameter('tdma.slot_id').value
-        self.tdma_role = self.get_parameter('tdma.tdma_role').value
+        self.tdma_role = self.get_parameter('tdma.role').value
         
-        self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
-        self.tdma_num_slots = self.get_parameter_or('tdma.num_slots', 1 ).value  
-        self.tdma_slot_guard_time_ms = self.Falseget_parameter_or('tdma.slot_guard_time_ms', 0).value  
-        #the sync message will be set after n frames
-        self.tdma_sync_slot_interval = self.get_parameter_or('tdma.tdma_sync_slot_interval', -1).value
-        #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
-        self.tdma_sync_msg_repeat_num = self.get_parameter_or('tdma.tdma_sync_msg_repeat_num', 0).value   
-        #if sync happens the tdma time can be reset 
+        if self.tdma_rolse == "master":
+            self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
+            self.tdma_num_slots = self.get_parameter_or('tdma.num_slots', 1 ).value  
+            self.tdma_slot_guard_time_ms = self.Falseget_parameter_or('tdma.slot_guard_time_ms', 0).value  
+            #the sync message will be set after n frames
+            self.tdma_sync_slot_interval = self.get_parameter_or('tdma.sync_slot_interval', -1).value
+            #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
+            self.tdma_sync_msg_repeat_num = self.get_parameter_or('tdma.sync_msg_repeat_num', 0).value   
+            #if sync happens the tdma time can be reset 
             
         self.tdma_flag = False
         self.tdma_in_slot = True
