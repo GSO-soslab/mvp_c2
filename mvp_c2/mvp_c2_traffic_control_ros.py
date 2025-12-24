@@ -73,7 +73,7 @@ class TrafficControlRos(Node):
         
         self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
         self.tdma_num_slots = self.get_parameter_or('tdma.num_slots', 1 ).value  
-        self.tdma_slot_guard_time_ms = self.get_parameter_or('tdma.slot_guard_time_ms', 0).value  
+        self.tdma_slot_guard_time_ms = self.Falseget_parameter_or('tdma.slot_guard_time_ms', 0).value  
         #the sync message will be set after n frames
         self.tdma_sync_slot_interval = self.get_parameter_or('tdma.tdma_sync_slot_interval', -1).value
         #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
@@ -228,9 +228,10 @@ class TrafficControlRos(Node):
 
     def dccl_pop_data(self):
 
+        #not ready i will skip
         if not self.can_transmit_flag:
             return
-         
+        
         new_data, msg_name = self.dynamic_buffer.pop()
 
         if not new_data:
@@ -267,7 +268,6 @@ class TrafficControlRos(Node):
         out_msg.data = bytearray(self.output_buffer)
         self.dccl_tx_pub.publish(out_msg)
         # self.get_logger().info(f"Buffer data length: {len(out_msg.data)}")
-
         name_msg = String()
         name_msg.data = self.output_msg_names
         self.dccl_tx_msg_pub.publish(name_msg)
