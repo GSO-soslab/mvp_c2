@@ -51,7 +51,7 @@ class TrafficControlRos(Node):
             'tx_interval', 1.0
         ).value
 
-        self.create_timer(self.0.01, self.dccl_pop_data) #pop data fequency
+        self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
     
     def load_tdma_config(self):
         #tdma starts in sync slot.
