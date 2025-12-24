@@ -52,8 +52,16 @@ class TrafficControlRos(Node):
         ).value
 
         self.start_time = None
+        self.can_transmit_flag = True
         self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
-    
+        self.create_timer(self.tx_interval, self.reset_transmit_flag)
+
+    def reset_transmit_flag(self):
+        #if still able transmit meaning no frame was transmitted, i will then transmit it
+        if self.can_transmit_flag:
+            self.push_frame()
+        self.can_transmit_flag = True
+
     def load_tdma_config(self):
         #tdma starts in sync slot.
         #the master will broadcast messages.
@@ -220,18 +228,9 @@ class TrafficControlRos(Node):
 
     def dccl_pop_data(self):
 
-        now = time.time()
-
-        if self.start_time is None:
-            self.start_time = now
-            print("popping_data", flush=True)
-
-        # timeout check
-        if now - self.start_time >= self.tx_interval:
-            self.push_frame()
-            self.start_time = None
+        if not self.can_transmit_flag:
             return
-
+         
         new_data, msg_name = self.dynamic_buffer.pop()
 
         if not new_data:
@@ -275,6 +274,7 @@ class TrafficControlRos(Node):
         #reset the buffer 
         self.output_buffer = bytearray()
         self.output_msg_names = ""
+        self.can_transmit_flag = False #rest the flag to false and wait for it to become true
 
 def main(args=None):
     rclpy.init(args=args)
