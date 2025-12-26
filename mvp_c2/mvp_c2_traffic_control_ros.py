@@ -61,8 +61,6 @@ class TrafficControlRos(Node):
         self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
         self.create_timer(self.tx_interval, self.reset_transmit_flag)
 
-
-
     def reset_transmit_flag(self):
         #if still able transmit meaning no frame was transmitted, i will then transmit it
         if self.can_transmit_flag:
@@ -144,7 +142,6 @@ class TrafficControlRos(Node):
         self.tdma_num_slots = proto_msg.num_slots
 
         self.tdma_flag = True
-
 
     def tdma_in_slot_check(self):
        #setup tdma
@@ -267,6 +264,10 @@ class TrafficControlRos(Node):
             self.get_logger().error(f"Failed to process DCCL intake: {e}")
 
     def dccl_pop_data(self):
+
+        if not self.tdma_in_slot_check():
+            print("Not in my slot")
+            return
 
         #not ready i will skip
         if not self.can_transmit_flag:
