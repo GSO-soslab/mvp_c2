@@ -151,33 +151,34 @@ class TrafficControlRos(Node):
         #sync_slot_index = k(n_slots*tdma_sync_slot_interval + 1)
         #start from 0
         #k(n_slots*tdma_sync_slot_interval + 1)
-        if self.tdma_flag:
-            current_time = round(time.time(), 1) 
-            tdma_elaspsed_time = current_time - self.tdma_start_time
-
-            slot_count = int(tdma_elaspsed_time //self.tdma_slot_duration)
-            cycle_slots = self.tdma_num_slots * self.tdma_sync_slot_interval + 1
-            cycle_count = slot_count % cycle_slots
-            
-            if cycle_count == 0:
-                if self.tdma_role == "master":
-                    self.master_sync_slot()
-            else: 
-                in_slot_node = (cycle_count - 1) % self.tdma_num_slots
-                #check slot ID
-                if in_slot_node == self.tdma_slot_id:
-                    slot_elapsed = tdma_elaspsed_time % self.tdma_slot_duration
-                    #check guard time
-                    if slot_elapsed > self.tdma_slot_guard_time_ms and slot_elapsed < self.tdma_slot_duration-self.tdma_slot_guard_time_ms:
-                        return True
-                    else:
-                        return False
-                else:
-                    return False
-        else:
+        if not self.tdma_flag:
             print("TDMA_flag is not setup") 
-            
             return False
+        
+        current_time = round(time.time(), 1) 
+        tdma_elaspsed_time = current_time - self.tdma_start_time
+
+        slot_count = int(tdma_elaspsed_time //self.tdma_slot_duration)
+        cycle_slots = self.tdma_num_slots * self.tdma_sync_slot_interval + 1
+        cycle_count = slot_count % cycle_slots
+        
+        if cycle_count == 0:
+            if self.tdma_role == "master":
+                self.master_sync_slot()
+        else: 
+            in_slot_node = (cycle_count - 1) % self.tdma_num_slots
+            #check slot ID
+            if in_slot_node != self.tdma_slot_id:
+                return False
+            
+            slot_elapsed = tdma_elaspsed_time % self.tdma_slot_duration
+            #check guard time
+            allowed_start_time = self.tdma_slot_guard_time_ms/1000
+            allowed_end_time = self.tdma_slot_duration-self.tdma_slot_guard_time_ms/1000
+            if allowed_start_time < slot_elapsed < allowed_end_time:
+                return True
+            else:
+                return False
 
     def load_dynamic_buffer_config(self):
 
