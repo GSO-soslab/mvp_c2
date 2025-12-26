@@ -169,6 +169,10 @@ class TrafficControlRos(Node):
             in_slot_node = (cycle_count - 1) % self.tdma_num_slots
             #check slot ID
             if in_slot_node != self.tdma_slot_id:
+                print(
+                    f"Not my slot: current_slot={in_slot_node}, my_slot={self.tdma_slot_id}",
+                    flush=True
+                )
                 return False
             
             slot_elapsed = tdma_elaspsed_time % self.tdma_slot_duration
@@ -178,6 +182,7 @@ class TrafficControlRos(Node):
             if allowed_start_time < slot_elapsed < allowed_end_time:
                 return True
             else:
+                print("In guard time", flush=True)
                 return False
 
     def load_dynamic_buffer_config(self):
