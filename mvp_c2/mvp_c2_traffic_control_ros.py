@@ -51,10 +51,17 @@ class TrafficControlRos(Node):
             'tx_interval', 1.0
         ).value
 
+
+        self.tdma_enable = self.get_parameter_or('tdma_enable', False).value
+
+        if (self.tdma_enable):
+            self.load_tdma_config()
         self.start_time = None
         self.can_transmit_flag = True
         self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
         self.create_timer(self.tx_interval, self.reset_transmit_flag)
+
+
 
     def reset_transmit_flag(self):
         #if still able transmit meaning no frame was transmitted, i will then transmit it
@@ -80,7 +87,8 @@ class TrafficControlRos(Node):
             #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
             self.tdma_sync_msg_repeat_num = self.get_parameter_or('tdma.sync_msg_repeat_num', 0).value   
             #if sync happens the tdma time can be reset 
-            
+        
+        #set tdma_setup_flag to True for sync msg and handle.
         self.tdma_flag = False
         self.tdma_in_slot = True
 
@@ -121,10 +129,11 @@ class TrafficControlRos(Node):
             self.output_msg_names += f", {'TdmaMasterSyncMsg'}" 
             self.push_frame()    
         
-        self.tdma_setup()
+        self.tdma_flag = True
 
     def tdma_slave_update(self,data):
         #decode the data
+        self.tdma_flag = False
         proto_msg = self.dccl_codec.decode(data)
         host_time = proto_msg.time #use for time sync
 
@@ -134,14 +143,44 @@ class TrafficControlRos(Node):
         self.tdma_slot_guard_time_ms = proto_msg.slot_guard_time_ms
         self.tdma_num_slots = proto_msg.num_slots
 
-        self.tdma_setup()
-
-    def tdma_setup(self):
-        #setup tdma
         self.tdma_flag = True
 
-    def tdma_in_slot_check(slef):
-       print("check tdma slots")
+
+    def tdma_in_slot_check(self):
+       #setup tdma
+
+        #|--------|---------Frame-----|---------Frame-----|
+        #sync_slot|slot|slot|slot|slot|slot|slot|slot|slot|
+        #sync_slot_index = k(n_slots*tdma_sync_slot_interval + 1)
+        #start from 0
+        #k(n_slots*tdma_sync_slot_interval + 1)
+        if self.tdma_flag:
+            current_time = round(time.time(), 1) 
+            tdma_elaspsed_time = current_time - self.tdma_start_time
+
+            slot_count = int(tdma_elaspsed_time //self.tdma_slot_duration)
+            cycle_slots = self.tdma_num_slots * self.tdma_sync_slot_interval + 1
+            cycle_count = slot_count % cycle_slots
+            
+            if cycle_count == 0:
+                if self.tdma_role == "master":
+                    self.master_sync_slot()
+            else: 
+                in_slot_node = (cycle_count - 1) % self.tdma_num_slots
+                #check slot ID
+                if in_slot_node == self.tdma_slot_id:
+                    slot_elapsed = tdma_elaspsed_time % self.tdma_slot_duration
+                    #check guard time
+                    if slot_elapsed > self.tdma_slot_guard_time_ms and slot_elapsed < self.tdma_slot_duration-self.tdma_slot_guard_time_ms:
+                        return True
+                    else:
+                        return False
+                else:
+                    return False
+        else:
+            print("TDMA_flag is not setup") 
+            
+            return False
 
     def load_dynamic_buffer_config(self):
 
