@@ -199,7 +199,7 @@ class MvpC2Commander(Node):
                 #odometry 
                 #checking msg_id time
                 if time.time() - self.last_dccl_rx_time[message_id] < self.dccl_rx_interval:
-                    print("The same message id recived deemed redudant", flush=True)
+                    print(f"The same message id={message_id} recived, deemed redudant", flush=True)
                     return
                 else:
                     #update the time and proceed to decoding
