@@ -56,8 +56,11 @@ class TrafficControlRos(Node):
 
         if self.tdma_enable:
             self.load_tdma_config()
+            self.dccl_codec.load('TdmaMasterSyncMsg')
+
         self.start_time = None
         self.can_transmit_flag = True
+        self.master_sync_slot()
         self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
         self.create_timer(self.tx_interval, self.reset_transmit_flag)
 
@@ -79,7 +82,7 @@ class TrafficControlRos(Node):
         if self.tdma_role == "master":
             self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
             self.tdma_num_slots = self.get_parameter_or('tdma.num_slots', 1 ).value  
-            self.tdma_slot_guard_time_ms = self.Falseget_parameter_or('tdma.slot_guard_time_ms', 0).value  
+            self.tdma_slot_guard_time_ms = self.get_parameter_or('tdma.slot_guard_time_ms', 0).value  
             #the sync message will be set after n frames
             self.tdma_sync_slot_interval = self.get_parameter_or('tdma.sync_slot_interval', -1).value
             #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
@@ -97,7 +100,6 @@ class TrafficControlRos(Node):
         self.tdma_start_time = round(time.time(), 1) 
         
         #prepare the msg except the time
-        self.dccl_codec.load('TdmaMasterSyncMsg')
         proto = mvp_cmd_dccl_pb2.TdmaMasterSyncMsg()
         proto.start_time = self.tdma_start_time
         proto.sync_slot_interval = self.tdma_sync_slot_interval
@@ -122,7 +124,7 @@ class TrafficControlRos(Node):
                 time.sleep(0.001)
             #send the message
             dccl_msg = self.dccl_codec.encode(proto)
-            dccl_msg = package_dccl(dccl_msg.data)
+            dccl_msg = package_dccl(dccl_msg)
             self.output_buffer.extend(dccl_msg)
             self.output_msg_names += f", {'TdmaMasterSyncMsg'}" 
             self.push_frame()    
