@@ -60,7 +60,6 @@ class TrafficControlRos(Node):
 
         self.start_time = None
         self.can_transmit_flag = True
-        self.master_sync_slot()
         self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
         self.create_timer(self.tx_interval, self.reset_transmit_flag)
 
@@ -88,6 +87,8 @@ class TrafficControlRos(Node):
             #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
             self.tdma_sync_msg_repeat_num = self.get_parameter_or('tdma.sync_msg_repeat_num', 0).value   
             #if sync happens the tdma time can be reset 
+            self.master_sync_slot()
+            
         else:
             self.tdma_slot_duration = 0
             self.tdma_num_slots = 0 
