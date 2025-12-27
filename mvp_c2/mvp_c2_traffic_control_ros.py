@@ -54,7 +54,7 @@ class TrafficControlRos(Node):
 
         self.tdma_enable = self.get_parameter_or('tdma_enable', False).value
 
-        if (self.tdma_enable):
+        if self.tdma_enable:
             self.load_tdma_config()
         self.start_time = None
         self.can_transmit_flag = True
@@ -165,6 +165,7 @@ class TrafficControlRos(Node):
         if cycle_count == 0:
             if self.tdma_role == "master":
                 self.master_sync_slot()
+            return False
         else: 
             in_slot_node = (cycle_count - 1) % self.tdma_num_slots
             #check slot ID
@@ -271,9 +272,10 @@ class TrafficControlRos(Node):
 
     def dccl_pop_data(self):
 
-        if not self.tdma_in_slot_check():
-            print("Not in my slot")
-            return
+        if self.tdma_enable:
+            if not self.tdma_in_slot_check():
+                print("Not in my slot")
+                return
 
         #not ready i will skip
         if not self.can_transmit_flag:
