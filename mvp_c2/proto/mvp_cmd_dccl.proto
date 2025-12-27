@@ -245,7 +245,6 @@ message TdmaMasterSyncMsg{
     required int32 slot_guard_time_ms = 5 [ (dccl.field) = {min: 0 max: 1000 precision: 0} ];   
     required int32 num_slots = 6 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
     required int32 slot_id = 7 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
-    // repeated int32 active_slot_id = 7 [ (dccl.field) = {min: 0 max: 10 precision: 0 max_repeat: 10 } ];
 }
 
 message TdmaSlaveSyncMsg{

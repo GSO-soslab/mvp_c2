@@ -184,7 +184,8 @@ class MvpC2Reporter(Node):
 
             #get the remote id
             proto_msg = self.dccl_obj.decode(data)
-            if proto_msg.HasField("remote_id")  and proto_msg.remote_id == self.local_id:
+            
+            if"remote_id" in proto_msg.DESCRIPTOR.fields_by_name  and proto_msg.remote_id == self.local_id:
                 # print(message_id, flush = True)
                 #Joy
                 if message_id == 1:

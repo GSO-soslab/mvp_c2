@@ -190,7 +190,7 @@ class MvpC2Commander(Node):
 
             proto_msg = self.dccl_obj.decode(data)
             # if proto_msg.remote_id == self.local_id:
-            if proto_msg.HasField("remote_id")  and proto_msg.remote_id == self.local_id:
+            if"remote_id" in proto_msg.DESCRIPTOR.fields_by_name  and proto_msg.remote_id == self.local_id:
                 #odometry 
                 if message_id == 3:
                     try:
