@@ -55,9 +55,11 @@ class TrafficControlRos(Node):
         self.tdma_enable = self.get_parameter_or('tdma_enable', False).value
 
         if self.tdma_enable:
+            print("#####TDMA  enabled####", flush = True)
             self.dccl_codec.load('TdmaMasterSyncMsg')
             self.load_tdma_config()
-
+        else:
+            print("#####TDMA not enabled####", flush = True)
         self.start_time = None
         self.can_transmit_flag = True
         self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
@@ -65,8 +67,8 @@ class TrafficControlRos(Node):
 
     def reset_transmit_flag(self):
         #if still able transmit meaning no frame was transmitted, i will then transmit it
-        # if self.can_transmit_flag:
-            # self.push_frame()
+        if self.can_transmit_flag and self.tdma_in_slot_check():
+            self.push_frame()
         self.can_transmit_flag = True
 
     def load_tdma_config(self):
@@ -168,6 +170,9 @@ class TrafficControlRos(Node):
         self.tdma_flag = True
 
     def tdma_in_slot_check(self):
+
+        if not self.tdma_enable:
+            return True
        #setup tdma
         #|--------|---------Frame-----|---------Frame-----|
         #sync_slot|slot|slot|slot|slot|slot|slot|slot|slot|
@@ -210,9 +215,12 @@ class TrafficControlRos(Node):
             allowed_start_time = self.tdma_slot_guard_time_ms/1000
             allowed_end_time = self.tdma_slot_duration-self.tdma_slot_guard_time_ms/1000
             if allowed_start_time < slot_elapsed < allowed_end_time:
+                self.get_logger().warn(
+                    f"In my slot",
+                    throttle_duration_sec=1.0
+                )
                 return True
             else:
-                print("In guard time", flush=True)
                 self.get_logger().warn(
                 "In guard time",
                 throttle_duration_sec=1.0
@@ -319,6 +327,7 @@ class TrafficControlRos(Node):
         new_data, msg_name = self.dynamic_buffer.pop()
 
         if not new_data:
+            # print("No data popped", flush = True)
             return
         
         #if new data will saturate by buffer
@@ -349,16 +358,17 @@ class TrafficControlRos(Node):
 
     def push_frame(self):
         out_msg = ByteMultiArray()
-        out_msg.data = bytearray(self.output_buffer)
-        self.dccl_tx_pub.publish(out_msg)
-        # self.get_logger().info(f"Buffer data length: {len(out_msg.data)}")
-        name_msg = String()
-        name_msg.data = self.output_msg_names
-        self.dccl_tx_msg_pub.publish(name_msg)
-        #reset the buffer 
-        self.output_buffer = bytearray()
-        self.output_msg_names = ""
-        self.can_transmit_flag = False #rest the flag to false and wait for it to become true
+        if self.output_buffer:
+            out_msg.data = bytearray(self.output_buffer)
+            self.dccl_tx_pub.publish(out_msg)
+            # self.get_logger().info(f"Buffer data length: {len(out_msg.data)}")
+            name_msg = String()
+            name_msg.data = self.output_msg_names
+            self.dccl_tx_msg_pub.publish(name_msg)
+            #reset the buffer 
+            self.output_buffer = bytearray()
+            self.output_msg_names = ""
+            self.can_transmit_flag = False #rest the flag to false and wait for it to become true
 
 def main(args=None):
     rclpy.init(args=args)
