@@ -65,8 +65,8 @@ class TrafficControlRos(Node):
 
     def reset_transmit_flag(self):
         #if still able transmit meaning no frame was transmitted, i will then transmit it
-        if self.can_transmit_flag:
-            self.push_frame()
+        # if self.can_transmit_flag:
+            # self.push_frame()
         self.can_transmit_flag = True
 
     def load_tdma_config(self):
