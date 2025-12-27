@@ -144,6 +144,7 @@ class TrafficControlRos(Node):
             dccl_msg = package_dccl(dccl_msg)
             self.output_buffer.extend(dccl_msg)
             self.output_msg_names += f", {'TdmaMasterSyncMsg'}" 
+            print("Sending Sync Msgs", flush=True)
             self.push_frame()    
         
         self.tdma_flag = True
@@ -171,7 +172,10 @@ class TrafficControlRos(Node):
         #start from 0
         #k(n_slots*tdma_sync_slot_interval + 1)
         if not self.tdma_flag:
-            print("TDMA_flag is not setup") 
+            self.get_logger().warn(
+                "TDMA_flag is not setup",
+                throttle_duration_sec=1.0
+            )
             return False
         
         current_time = round(time.time(), 1) 
@@ -189,9 +193,9 @@ class TrafficControlRos(Node):
             in_slot_node = (cycle_count - 1) % self.tdma_num_slots
             #check slot ID
             if in_slot_node != self.tdma_slot_id:
-                print(
+                self.get_logger().warn(
                     f"Not my slot: current_slot={in_slot_node}, my_slot={self.tdma_slot_id}",
-                    flush=True
+                    throttle_duration_sec=1.0
                 )
                 return False
             
@@ -203,6 +207,10 @@ class TrafficControlRos(Node):
                 return True
             else:
                 print("In guard time", flush=True)
+                self.get_logger().warn(
+                "In guard time",
+                throttle_duration_sec=1.0
+            )
                 return False
 
     def load_dynamic_buffer_config(self):
