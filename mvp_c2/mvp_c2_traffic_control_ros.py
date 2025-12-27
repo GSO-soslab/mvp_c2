@@ -79,14 +79,14 @@ class TrafficControlRos(Node):
         self.tdma_slot_id = self.get_parameter('tdma.slot_id').value
         self.tdma_role = self.get_parameter('tdma.role').value
         
-        if self.tdma_role == "master":
-            self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
-            self.tdma_num_slots = self.get_parameter_or('tdma.num_slots', 1 ).value  
-            self.tdma_slot_guard_time_ms = self.get_parameter_or('tdma.slot_guard_time_ms', 0).value  
-            #the sync message will be set after n frames
-            self.tdma_sync_slot_interval = self.get_parameter_or('tdma.sync_slot_interval', -1).value
-            #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
-            self.tdma_sync_msg_repeat_num = self.get_parameter_or('tdma.sync_msg_repeat_num', 0).value   
+        # if self.tdma_role == "master":
+        self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
+        self.tdma_num_slots = self.get_parameter_or('tdma.num_slots', 1 ).value  
+        self.tdma_slot_guard_time_ms = self.get_parameter_or('tdma.slot_guard_time_ms', 0).value  
+        #the sync message will be set after n frames
+        self.tdma_sync_slot_interval = self.get_parameter_or('tdma.sync_slot_interval', 1).value
+        #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
+        self.tdma_sync_msg_repeat_num = self.get_parameter_or('tdma.sync_msg_repeat_num', 0).value   
             #if sync happens the tdma time can be reset 
         
         #set tdma_setup_flag to True for sync msg and handle.
@@ -115,6 +115,7 @@ class TrafficControlRos(Node):
         sync_msg_start_t  = self.tdma_start_time + self.tdma_slot_guard_time_ms/1000 
         #wait for the guard time
         while time.time() < sync_msg_start_t:
+            print("Waiting the guardtime", flush=True)
             time.sleep(0.001)
 
         for i in range(self.tdma_sync_msg_repeat_num):
