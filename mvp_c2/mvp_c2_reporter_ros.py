@@ -164,6 +164,8 @@ class MvpC2Reporter(Node):
         self.dccl_obj.load('ResetDatum')
         self.dccl_obj.load('RosLaunch')
         self.dccl_obj.load('ReportRosLaunch')
+        self.dccl_obj.load('TdmaMasterSyncMsg')
+
 
 
     #######################################################
