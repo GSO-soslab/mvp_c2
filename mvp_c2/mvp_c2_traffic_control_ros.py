@@ -79,15 +79,23 @@ class TrafficControlRos(Node):
         self.tdma_slot_id = self.get_parameter('tdma.slot_id').value
         self.tdma_role = self.get_parameter('tdma.role').value
         
-        # if self.tdma_role == "master":
-        self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
-        self.tdma_num_slots = self.get_parameter_or('tdma.num_slots', 1 ).value  
-        self.tdma_slot_guard_time_ms = self.get_parameter_or('tdma.slot_guard_time_ms', 0).value  
-        #the sync message will be set after n frames
-        self.tdma_sync_slot_interval = self.get_parameter_or('tdma.sync_slot_interval', 1).value
-        #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
-        self.tdma_sync_msg_repeat_num = self.get_parameter_or('tdma.sync_msg_repeat_num', 0).value   
+        if self.tdma_role == "master":
+            self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
+            self.tdma_num_slots = self.get_parameter_or('tdma.num_slots', 1 ).value  
+            self.tdma_slot_guard_time_ms = self.get_parameter_or('tdma.slot_guard_time_ms', 0).value  
+            #the sync message will be set after n frames
+            self.tdma_sync_slot_interval = self.get_parameter_or('tdma.sync_slot_interval', -1).value
+            #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
+            self.tdma_sync_msg_repeat_num = self.get_parameter_or('tdma.sync_msg_repeat_num', 0).value   
             #if sync happens the tdma time can be reset 
+        else:
+            self.tdma_slot_duration = 0
+            self.tdma_num_slots = 0 
+            self.tdma_slot_guard_time_ms = 0
+            #the sync message will be set after n frames
+            self.tdma_sync_slot_interval = 0
+            #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
+            self.tdma_sync_msg_repeat_num = 0  
         
         #set tdma_setup_flag to True for sync msg and handle.
         self.tdma_flag = False
