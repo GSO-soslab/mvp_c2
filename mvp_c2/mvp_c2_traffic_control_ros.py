@@ -76,7 +76,7 @@ class TrafficControlRos(Node):
         self.tdma_slot_id = self.get_parameter('tdma.slot_id').value
         self.tdma_role = self.get_parameter('tdma.role').value
         
-        if self.tdma_rolse == "master":
+        if self.tdma_role == "master":
             self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
             self.tdma_num_slots = self.get_parameter_or('tdma.num_slots', 1 ).value  
             self.tdma_slot_guard_time_ms = self.Falseget_parameter_or('tdma.slot_guard_time_ms', 0).value  
