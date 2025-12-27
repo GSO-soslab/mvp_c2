@@ -29,7 +29,7 @@ class DynamicBufferPython:
 
         # 2. Handle Capacity (Drop oldest item if full and not just updating a group)
         if len(self._queue) >= self.max_total_size and not is_update:
-
+            print("BUffer overflow", flush = True)
             if self.drop_by_time:
                 # Now index [2] correctly points to arrival_time
                 oldest_idx = min(range(len(self._queue)), key=lambda i: self._queue[i][2])
@@ -56,6 +56,7 @@ class DynamicBufferPython:
         heapq.heappush(self._queue, entry)
 
     def pop(self):
+        now = time.time()
         while self._queue:
             priority_neg, expiration, arrival, data, group, is_valid_ref = heapq.heappop(self._queue)
             
@@ -64,14 +65,18 @@ class DynamicBufferPython:
                 continue
                 
             # 2. Check if it has expired, lazy removal
-            if time.time() > expiration:
-                if group and self._groups.get(group)[3]== data:
-                    del self._groups[group]
-                continue # Discard expired item and move to next
+            if now > expiration:
+                if group:
+                    group_entry = self._groups.get(group)
+                    if group_entry and group_entry[3] == data:
+                        del self._groups[group]
+                continue
                 
             # 3. Success: Valid and not expired
-            if group and group in self._groups:
-                del self._groups[group]
+            if group:
+                group_entry = self._groups.get(group)
+                if group_entry and group_entry[3] == data:
+                    del self._groups[group]
             return data, group
             
         return None, None

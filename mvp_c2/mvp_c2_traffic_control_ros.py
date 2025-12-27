@@ -36,8 +36,8 @@ class TrafficControlRos(Node):
         self.load_dynamic_buffer_config()
         
         #ros stuff
-        self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_tx', self.dccl_tx_callback, 1) #from reporter/commander
-        self.dccl_rx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_rx', self.dccl_rx_callback, 1) #from hardware
+        self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_tx', self.dccl_tx_callback, 10) #from reporter/commander
+        self.dccl_rx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_rx', self.dccl_rx_callback, 10) #from hardware
 
         self.dccl_tx_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_controlled_tx', 10)  #to hardware
         self.dccl_tx_msg_pub = self.create_publisher(String, 'mvp_c2/traffic_control/dccl_msg_controlled_tx_names', 10)  #to hardware (dccl message name string array)
@@ -60,7 +60,7 @@ class TrafficControlRos(Node):
             self.load_tdma_config()
         else:
             print("#####TDMA not enabled####", flush = True)
-        self.start_time = None
+        # self.start_time = None
         self.can_transmit_flag = True
         self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
         self.create_timer(self.tx_interval, self.reset_transmit_flag)
@@ -217,7 +217,7 @@ class TrafficControlRos(Node):
             allowed_start_time = self.tdma_slot_guard_time_ms/1000
             allowed_end_time = self.tdma_slot_duration-self.tdma_slot_guard_time_ms/1000
             if allowed_start_time < slot_elapsed < allowed_end_time:
-                self.get_logger().warn(
+                self.get_logger().info(
                     f"In my slot: my_slot/total=[{self.tdma_slot_id}/{self.tdma_num_slots}]",
                     throttle_duration_sec=1.0
                 )
@@ -329,7 +329,10 @@ class TrafficControlRos(Node):
         new_data, msg_name = self.dynamic_buffer.pop()
 
         if not new_data:
-            # print("No data popped", flush = True)
+            # self.get_logger().warn(
+            #         f"No data popped: [{self.dynamic_buffer._queue}]",
+            #         throttle_duration_sec=1.0
+            # )
             return
         
         #if new data will saturate by buffer
@@ -342,7 +345,7 @@ class TrafficControlRos(Node):
             self.push_frame()
             # log the data for the next time
             self.output_buffer.extend(new_data)
-            self.start_time = None
+            # self.start_time = None
             return
         
         #regular loop accumulating data
@@ -356,7 +359,7 @@ class TrafficControlRos(Node):
         #if one dccl already exceed the max frame size
         if len(self.output_buffer) >= self.max_frame_size:
             self.push_frame()
-            self.start_time = None
+            # self.start_time = None
 
     def push_frame(self):
         out_msg = ByteMultiArray()
