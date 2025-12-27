@@ -55,8 +55,8 @@ class TrafficControlRos(Node):
         self.tdma_enable = self.get_parameter_or('tdma_enable', False).value
 
         if self.tdma_enable:
-            self.load_tdma_config()
             self.dccl_codec.load('TdmaMasterSyncMsg')
+            self.load_tdma_config()
 
         self.start_time = None
         self.can_transmit_flag = True
@@ -88,7 +88,7 @@ class TrafficControlRos(Node):
             self.tdma_sync_msg_repeat_num = self.get_parameter_or('tdma.sync_msg_repeat_num', 0).value   
             #if sync happens the tdma time can be reset 
             self.master_sync_slot()
-            
+
         else:
             self.tdma_slot_duration = 0
             self.tdma_num_slots = 0 
@@ -110,6 +110,7 @@ class TrafficControlRos(Node):
         
         #prepare the msg except the time
         proto = mvp_cmd_dccl_pb2.TdmaMasterSyncMsg()
+        proto.time = round(time.time(), 1)
         proto.start_time = self.tdma_start_time
         proto.sync_slot_interval = self.tdma_sync_slot_interval
         proto.slot_duration = self.tdma_slot_duration
@@ -117,6 +118,12 @@ class TrafficControlRos(Node):
         proto.num_slots = self.tdma_num_slots
         proto.slot_id = self.tdma_slot_id
 
+        print("proto data")
+        
+        print(proto, flush=True)
+        dccl_msg = self.dccl_codec.encode(proto)
+
+        print("####", flush=True)
         #compute the delay between messages
         #|--------------slot---------------|
         #|guard_time|msg|msg|msg|guard_time|
@@ -124,9 +131,9 @@ class TrafficControlRos(Node):
         sync_msg_start_t  = self.tdma_start_time + self.tdma_slot_guard_time_ms/1000 
         #wait for the guard time
         while time.time() < sync_msg_start_t:
-            print("Waiting the guardtime", flush=True)
+            # print("Waiting the guardtime", flush=True)
             time.sleep(0.001)
-
+        
         for i in range(self.tdma_sync_msg_repeat_num):
             proto.time = round(time.time(), 1)
             msg_send_time = sync_msg_start_t + sync_msg_interval*(i+1)
@@ -286,7 +293,7 @@ class TrafficControlRos(Node):
 
         if self.tdma_enable:
             if not self.tdma_in_slot_check():
-                print("Not in my slot")
+                # print("Not in my slot")
                 return
 
         #not ready i will skip

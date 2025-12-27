@@ -237,12 +237,12 @@ message ReportRosLaunch{
 message TdmaMasterSyncMsg{
     option (dccl.msg) = { codec_version: 4
                           id: 51
-                          max_bytes: 32 };
+                          max_bytes: 64 };
     required double time = 1 [ (dccl.field) = {min: 1750000000 max: 1800000000 precision: 1} ];
     required double start_time = 2 [ (dccl.field) = {min: 1750000000 max: 1800000000 precision: 1} ];
     required int32 sync_slot_interval = 3 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
-    required double slot_duration = 4 [ (dccl.field) = {min: 0 max: 100 precision: 0} ]; 
-    required double slot_guard_time_ms = 5 [ (dccl.field) = {min: 0 max: 1000 precision: 0} ];   
+    required double slot_duration = 4 [ (dccl.field) = {min: 0 max: 100 precision: 1} ]; 
+    required int32 slot_guard_time_ms = 5 [ (dccl.field) = {min: 0 max: 1000 precision: 0} ];   
     required int32 num_slots = 6 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];    
     required int32 slot_id = 7 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
     // repeated int32 active_slot_id = 7 [ (dccl.field) = {min: 0 max: 10 precision: 0 max_repeat: 10 } ];
