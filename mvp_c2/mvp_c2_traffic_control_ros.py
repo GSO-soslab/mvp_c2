@@ -119,10 +119,10 @@ class TrafficControlRos(Node):
 
         # print("proto data")
         
-        # print(proto, flush=True)
+        print(proto, flush=True)
         # dccl_msg = self.dccl_codec.encode(proto)
 
-        # print("####", flush=True)
+        print("####", flush=True)
         #compute the delay between messages
         #|--------------slot---------------|
         #|guard_time|msg|msg|msg|guard_time|
@@ -145,7 +145,11 @@ class TrafficControlRos(Node):
             self.output_msg_names += f", {'TdmaMasterSyncMsg'}" 
             print("Sending Sync Msgs", flush=True)
             self.push_frame()    
-        
+
+        #wait until the end of this slot
+        while time.time() < (self.tdma_start_time + self.tdma_slot_duration):
+            # print("Waiting the guardtime", flush=True)
+            time.sleep(0.001)
         self.tdma_flag = True
         print("TDMA_Sync done", flush=True)
 
@@ -180,12 +184,15 @@ class TrafficControlRos(Node):
         current_time = round(time.time(), 1) 
         tdma_elaspsed_time = current_time - self.tdma_start_time
 
+        # print(tdma_elaspsed_time, flush= True)
+
         slot_count = int(tdma_elaspsed_time //self.tdma_slot_duration)
         cycle_slots = self.tdma_num_slots * self.tdma_sync_slot_interval + 1
         cycle_count = slot_count % cycle_slots
         
         if cycle_count == 0:
             if self.tdma_role == "master":
+                print("Sync again", flush=True)
                 self.master_sync_slot()
             return False
         else: 
