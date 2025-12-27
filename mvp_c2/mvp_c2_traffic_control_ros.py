@@ -77,6 +77,7 @@ class TrafficControlRos(Node):
         
         self.tdma_slot_id = self.get_parameter('tdma.slot_id').value
         self.tdma_role = self.get_parameter('tdma.role').value
+        self.tdma_flag = False
         
         if self.tdma_role == "master":
             self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
@@ -99,8 +100,6 @@ class TrafficControlRos(Node):
             self.tdma_sync_msg_repeat_num = 0  
         
         #set tdma_setup_flag to True for sync msg and handle.
-        self.tdma_flag = False
-        self.tdma_in_slot = True
 
     def master_sync_slot(self):
 
@@ -118,12 +117,12 @@ class TrafficControlRos(Node):
         proto.num_slots = self.tdma_num_slots
         proto.slot_id = self.tdma_slot_id
 
-        print("proto data")
+        # print("proto data")
         
-        print(proto, flush=True)
-        dccl_msg = self.dccl_codec.encode(proto)
+        # print(proto, flush=True)
+        # dccl_msg = self.dccl_codec.encode(proto)
 
-        print("####", flush=True)
+        # print("####", flush=True)
         #compute the delay between messages
         #|--------------slot---------------|
         #|guard_time|msg|msg|msg|guard_time|
@@ -148,6 +147,7 @@ class TrafficControlRos(Node):
             self.push_frame()    
         
         self.tdma_flag = True
+        print("TDMA_Sync done", flush=True)
 
     def tdma_slave_update(self,data):
         #decode the data
@@ -165,7 +165,6 @@ class TrafficControlRos(Node):
 
     def tdma_in_slot_check(self):
        #setup tdma
-
         #|--------|---------Frame-----|---------Frame-----|
         #sync_slot|slot|slot|slot|slot|slot|slot|slot|slot|
         #sync_slot_index = k(n_slots*tdma_sync_slot_interval + 1)
