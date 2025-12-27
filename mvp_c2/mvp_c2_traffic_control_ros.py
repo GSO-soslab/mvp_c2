@@ -167,6 +167,8 @@ class TrafficControlRos(Node):
         self.tdma_slot_guard_time_ms = proto_msg.slot_guard_time_ms
         self.tdma_num_slots = proto_msg.num_slots
 
+        print("TDMA_Sync Msg from Master Received", flush=True)
+
         self.tdma_flag = True
 
     def tdma_in_slot_check(self):
@@ -205,7 +207,7 @@ class TrafficControlRos(Node):
             #check slot ID
             if in_slot_node != self.tdma_slot_id:
                 self.get_logger().warn(
-                    f"Not my slot: current_slot={in_slot_node}, my_slot={self.tdma_slot_id}",
+                    f"Not my slot: Slot_status = {cycle_count}/{cycle_slots}|current/my={in_slot_node}/{self.tdma_slot_id}",
                     throttle_duration_sec=1.0
                 )
                 return False
@@ -216,7 +218,7 @@ class TrafficControlRos(Node):
             allowed_end_time = self.tdma_slot_duration-self.tdma_slot_guard_time_ms/1000
             if allowed_start_time < slot_elapsed < allowed_end_time:
                 self.get_logger().warn(
-                    f"In my slot",
+                    f"In my slot: my_slot/total={self.tdma_slot_id}/{self.tdma_num_slots}",
                     throttle_duration_sec=1.0
                 )
                 return True
