@@ -39,7 +39,7 @@ class MvpC2Commander(Node):
 
         self.local_id = self.declare_parameter('local_id', 1).value
         self.remote_id = self.declare_parameter('remote_id', 2).value
-        self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 1.0).value
+        self.dccl_rx_interval = self.declare_parameter('dccl_rx_interval', 1.0).value
 
         self.dccl_tx_joy_interval = self.declare_parameter('dccl_tx_joy_interval', 0.1).value
 
@@ -173,7 +173,12 @@ class MvpC2Commander(Node):
         self.dccl_obj.load('RosLaunch')
         self.dccl_obj.load('ReportRosLaunch')
         self.dccl_obj.load('TdmaMasterSyncMsg')
-
+        
+        ##make a dictionary to keep the time of the last time a dccl msg came in
+        # self.last_dccl_rx_time = {}  # {msg_id: last_received_time}
+        # for i in range (50):
+        #     self.last_dccl_rx_time[i] = time.time()
+        self.last_dccl_rx_time = [time.time()] * 50
 
     #######################################################
     ############DCCL parsing###############################
@@ -192,6 +197,14 @@ class MvpC2Commander(Node):
             # if proto_msg.remote_id == self.local_id:
             if"remote_id" in proto_msg.DESCRIPTOR.fields_by_name  and proto_msg.remote_id == self.local_id:
                 #odometry 
+                #checking msg_id time
+                if time.time() - self.last_dccl_rx_time[message_id] < self.dccl_rx_interval:
+                    print("The same message id recived deemed redudant", flush=True)
+                    return
+                else:
+                    #update the time and proceed to decoding
+                    self.last_dccl_rx_time[message_id] = time.time()
+
                 if message_id == 3:
                     try:
                         # print(decoded_msg, flush = True)
