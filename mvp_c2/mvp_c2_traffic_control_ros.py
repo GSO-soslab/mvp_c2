@@ -335,6 +335,13 @@ class TrafficControlRos(Node):
             # )
             return
         
+        if msg_name in self.output_msg_names:
+            self.get_logger().warn(
+                    f"Skip the same message: [{msg_name}]",
+                    throttle_duration_sec=1.0
+            )
+            return
+
         #if new data will saturate by buffer
         if self.output_buffer and (len(self.output_buffer) + len(new_data) > self.max_frame_size):
             if msg_name:
