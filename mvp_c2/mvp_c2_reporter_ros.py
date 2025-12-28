@@ -70,6 +70,7 @@ class MvpC2Reporter(Node):
         self.cpu_info_sub = self.create_subscription(Float32MultiArray, 'local/computer_info', self.cpu_info_callback,10)
         self.altimeter_sub = self.create_subscription(PointStamped, 'local/altimeter', self.altimeter_callback, 10)
 
+        self.feature_geo_points_sub = self.create_subscription(Float32MultiArray, 'local/feature_geo_points_sub', self.feature_geo_points_callback,10)
 
         #client for local controllers
         self.local_set_controller_client = self.create_client(SetBool, 'controller/set')
@@ -155,6 +156,7 @@ class MvpC2Reporter(Node):
         self.dccl_obj.load('CPUMonitor')
         self.dccl_obj.load('AltimeterPointStamped')
         self.dccl_obj.load('AcommGeoPoint')
+        self.dccl_obj.load('FeatureGeoPoints')
         self.dccl_obj.load('SetPowerPort')
         self.dccl_obj.load('ReportPowerPort')
         self.dccl_obj.load('SetController')
@@ -427,6 +429,23 @@ class MvpC2Reporter(Node):
         # if self.local_altimeter_info_tx_flag is False:
         self.publish_dccl(proto)
             # self.local_altimeter_info_tx_flag = True
+
+    #feature points
+    #feature points
+    def feature_geo_points_callback(self, msg):
+        proto = mvp_cmd_dccl_pb2.FeatureGeoPoints()
+        #msg.data = [lat, lon, alt, lat, lon, alt]
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.point_size = int(len(msg.data)/3)
+
+        for i in range(proto.point_size):
+            proto.latitude.append(msg.data[i]*100)
+            proto.longitude.append(msg.data[i+1]*100)
+            proto.altitude.append(msg.data[i+2]) 
+        self.publish_dccl(proto)
+
 
     def report_roslaunch_callback(self):
         # if(self.local_report_roslaunch_tx_flag == False):

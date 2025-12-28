@@ -75,6 +75,7 @@ class MvpC2Commander(Node):
         self.remote_power_info_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/power_info',10)
         self.remote_cpu_info_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/computer_info',10)
         self.remote_altimeter_pub = self.create_publisher(PointStamped, topic_prefix + '/altimeter',10)
+        self.remote_feature_points_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/feature_points',10)
 
 
         self.local_joy_sub = self.create_subscription(Joy, topic_prefix + '/joy', self.joy_callback, 10)
@@ -161,6 +162,7 @@ class MvpC2Commander(Node):
         self.dccl_obj.load('CPUMonitor')
         self.dccl_obj.load('AltimeterPointStamped')
         self.dccl_obj.load('AcommGeoPoint')
+        self.dccl_obj.load('FeatureGeoPoints')
         self.dccl_obj.load('SetPowerPort')
         self.dccl_obj.load('ReportPowerPort')
         self.dccl_obj.load('SetController')
@@ -338,6 +340,21 @@ class MvpC2Commander(Node):
                         msg.position_covariance_type = 1
                         self.remote_acomm_navsat_pub.publish(msg)
 
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
+                #feature points message
+                if message_id == 9:
+                    try:
+                        # proto_msg = self.dccl_obj.decode(data)
+                        msg = Float32MultiArray()
+                        sec = int(proto_msg.time)  
+                        nanosec = int((proto_msg.time - sec) * 1e9)  
+                        for i in range(proto_msg.point_size):
+                            msg.data[i] = proto_msg.latitude[i]*0.01
+                            msg.data[i+1] = proto_msg.longitude[i]*0.01
+                            msg.data[i+2] = proto_msg.altitude[i]
+                            self.remote_feature_points_pub.publish(msg)
                     except Exception as e:
                         # Print the exception message for debugging
                         print(f"Decoding error: {e}", flush=True)
