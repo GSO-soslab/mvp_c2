@@ -185,12 +185,17 @@ class MvpC2Reporter(Node):
         # flag, data = check_dccl(msg.data)
 
         if flag == True:
-            message_id = self.dccl_obj.id(data)
-            print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
-
-            #get the remote id
-            proto_msg = self.dccl_obj.decode(data)
-            
+            try:
+                message_id = self.dccl_obj.id(data)
+                print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
+                #get the remote id
+                proto_msg = self.dccl_obj.decode(data)
+            except Exception as e:
+                print("Couldn't decode", flush=True)
+                return
+            except dccl.Exception:
+                print("Couldn't decode", flush=True)
+                return
             if"remote_id" in proto_msg.DESCRIPTOR.fields_by_name  and proto_msg.remote_id == self.local_id:
                 # print(message_id, flush = True)
                 if time.time() - self.last_dccl_rx_time[message_id] < self.dccl_rx_interval:
