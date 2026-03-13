@@ -191,11 +191,18 @@ class MvpC2Commander(Node):
         bdata = bytearray(ord(c) for c in msg.data)
         flag, data = check_dccl(bdata)
         if flag == True:
-            message_id = self.dccl_obj.id(data)
-            # print(message_id, flush = True)
-            print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
+            try:
+                message_id = self.dccl_obj.id(data)
+                # print(message_id, flush = True)
+                print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
+                proto_msg = self.dccl_obj.decode(data)
+            except Exception as e:
+                print("Could not Deode!", flush=True)
+                return
+            except dccl.DcclException:
+                print("Could not Deode!", flush=True)
+                return
 
-            proto_msg = self.dccl_obj.decode(data)
             # if proto_msg.remote_id == self.local_id:
             if"remote_id" in proto_msg.DESCRIPTOR.fields_by_name  and proto_msg.remote_id == self.local_id:
                 #odometry 

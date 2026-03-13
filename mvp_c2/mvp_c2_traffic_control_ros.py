@@ -278,7 +278,16 @@ class TrafficControlRos(Node):
             if len(dccl_msg) >= 4 and dccl_msg[-4] == 42 and dccl_msg[-1]==ord('\n'): #the four last chars are *AB\n
                 #check and peak the message
                 flag, cdata = check_dccl(dccl_msg)
-                message_id = self.dccl_codec.id(cdata)
+                if flag:
+                    try:
+                        message_id = self.dccl_codec.id(cdata)
+                    except Exception as e:
+                        print("Could not Deode!", flush=True)
+                        return
+                    except dccl.DcclException:
+                        print("Could not Deode!", flush=True)
+                        return
+
                 #if it is master sync message i will update the tdma setting
                 if flag and message_id == 51:
                     self.tdma_slave_update(cdata)

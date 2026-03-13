@@ -16,15 +16,18 @@ def check_dccl(data):
             print("Error: Header imcomplete", flush = True)
             # print(data, flush = True)
             # print(f'data size = {len(data)}')
+            flag = False
             return flag, data_out
         ##check the * char
         elif data[-4] != 42:
             print("Error: Data does not end with '*'", flush = True)
+            flag = False
             return flag, data_out
         #get checksum string
         elif(len(data)<7):
-             print ("Data is not long enough", flush=True)
-             return flag, data_out
+            print ("Data is not long enough", flush=True)
+            flag = False
+            return flag, data_out
         else:
             try:
                 checksum_str = bytes([data[-3], data[-2]]).decode('ascii')
@@ -43,7 +46,10 @@ def check_dccl(data):
                     flag = True
                 else:
                     print("Error: Checksum does not match",flush=True)
+                    flag = False
+                    return flag, data_out
 
             except (IndexError, UnicodeDecodeError) as e:
-               print(f"Error while parsing checksum: {e}, Raw bytes (hex): {bytes([data[-3], data[-2]]).hex(' ').upper()}", flush=True)
+                flag = False
+                print(f"Error while parsing checksum: {e}, Raw bytes (hex): {bytes([data[-3], data[-2]]).hex(' ').upper()}", flush=True)
         return flag, data_out
