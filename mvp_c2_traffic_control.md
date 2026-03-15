@@ -1,4 +1,4 @@
-# MVP C2 Reporter ROS node
+# MVP C2 Traffic Control ROS node
 
 ## Description
 
