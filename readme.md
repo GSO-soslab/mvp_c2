@@ -29,7 +29,7 @@ We don't configure this node directly interface with the communication hardware 
 
 ## mvp_c2_traffic_control
 **mvp_c2_traffic_control** is a node that manages the `/dccl_msg_tx` from either `reporter` or the `commander`. It manages the DCCL data coming from and flow into `reporter` and `commander`. More importantly, it controls when and which DCCL message will be send to the communication hardware.
-
+[Further document](mvp_c2_traffic_control.md)
 
 # Setup instruction
 ## Simple data flow (One to one)
