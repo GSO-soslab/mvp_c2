@@ -32,33 +32,36 @@ We don't configure this node directly interface with the communication hardware 
 
 
 # Setup instruction
-## Simple data flow
+## Simple data flow (One to one)
 ### Commander to reporter
-- Commander:  Topic/service called by user ---> |package DCCL| ---> `mvp_c2/commander/dccl_msg_tx`--->
-- Commander traffic control: ---> `mvp_c2/traffic_control/dccl_msg_tx`---> |dynamic buffer| ---> |TDMA (optional)| --->`mvp_c2/traffic_control/dccl_msg_controlled_tx`--->
+- **Commander:** Topic/service called by user → |package DCCL| → `mvp_c2/commander/dccl_msg_tx`→
 
-- Hardware communication: ---> `dccl_msg_tx` (hardware_tx_topic)
+- **Commander traffic control:** → `mvp_c2/traffic_control/dccl_msg_tx` → |dynamic buffer| → |TDMA (optional)| →`mvp_c2/traffic_control/dccl_msg_controlled_tx`→
+
+- **Hardware communication:**  → `dccl_msg_tx` (hardware_tx_topic)
 
     -----------Wireless--------------
 
-- Hardware communication: ---> `dccl_msg_rx` (hardware_rx_topic)--->
+- **Hardware communication:** → `dccl_msg_rx` (hardware_rx_topic)→
 
-- Reporter traffic control: --->`mvp_c2/traffic_control/dccl_msg_rx`--->|salinity check| --->`mvp_c2/traffic_control/dccl_msg_controlled_rx`--->
+- **Reporter traffic control:** →`mvp_c2/traffic_control/dccl_msg_rx`→|salinity check| →`mvp_c2/traffic_control/dccl_msg_controlled_rx`→
 
-- Reporter: --->`mvp_c2/reporter/dccl_msg_rx`--->|salinity check|--->|remote_id check|---> |time interval check|--->parse--->action
+- **Reporter:** →`mvp_c2/reporter/dccl_msg_rx` → |salinity check| → |remote_id check| → |time interval check| → parse→action
+
 
 ### Reporter to commander
-- Reporter:  Topic or client call ---> |package DCCL| ---> `mvp_c2/reporter/dccl_msg_tx`--->
-- Reporter traffic control: ---> `mvp_c2/traffic_control/dccl_msg_tx`---> |dynamic buffer| ---> |TDMA (optional)| --->`mvp_c2/traffic_control/dccl_msg_controlled_tx`--->
+- **Reporter:**  Topic or client call → |package DCCL| → `mvp_c2/reporter/dccl_msg_tx`→
+- Reporter traffic control: → `mvp_c2/traffic_control/dccl_msg_tx`→ |dynamic buffer| → |TDMA (optional)| →`mvp_c2/traffic_control/dccl_msg_controlled_tx`→
 
-- Hardware communication: ---> `dccl_msg_tx` (hardware_tx_topic)
- -----------Wireless--------------
+- **Hardware communication:** → `dccl_msg_tx` (hardware_tx_topic)
 
-- Hardware communication: ---> `dccl_msg_rx` (hardware_rx_topic)--->
+     -----------Wireless--------------
 
-- Commander traffic control: --->`mvp_c2/traffic_control/dccl_msg_rx`--->|salinity check| --->`mvp_c2/traffic_control/dccl_msg_controlled_rx`--->
+- **Hardware communication:** → `dccl_msg_rx` (hardware_rx_topic)→
 
-- Commander: --->`mvp_c2/commander/dccl_msg_rx`--->|salinity check|--->|remote_id check|---> |time interval check|--->parse--->action/publish
+- **Commander traffic control:** →`mvp_c2/traffic_control/dccl_msg_rx` → |salinity check| →`mvp_c2/traffic_control/dccl_msg_controlled_rx`→
+
+- **Commander:** → `mvp_c2/commander/dccl_msg_rx` → |salinity check| → |remote_id check| → |time interval check| → parse→action/publish
 
 
 ## Full-duplex setup
