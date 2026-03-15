@@ -122,5 +122,25 @@ Below is an example that the Sync slot will occure after two  TDMA cycles
 - `tdma.sync_slot_interval`: sync slot will occure after `<tdma.sync_slot_interval>` number of TDMA cycle.
 
 - `tdma.sync_msg_repeat_num`: how many times the tdma sync message will be send out during the sync slot.
+  - Example for TDMA master
+    ```
+    tdma_enable: True
 
+    tdma:
+      slot_id: 0
+      role: "master"
+      slot_duration: 10.0
+      num_slots: 3
+      slot_guard_time_ms: 100
+      sync_slot_interval: 5
+      sync_msg_repeat_num: 5
+    ```
+  -  Example for TDMA slave
+      ```
+      tdma_enable: True
 
+      tdma:
+        slot_id: 1
+        role: "slave"
+      ```
+ 
