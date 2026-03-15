@@ -3,8 +3,20 @@
 
 **Data encoding/decoding** is based on `DCCL` library. Each encoded DCCL message is argumented with header `$$`, `XOR` checksum, and `\n` ending.
 
+For the vehicle with transparent RF or WIFI communication, we have serial and udp ROS nodes that could be used.
+For acoustic modems, we normally need a customized sensor drivers which could package data in specific format that is compatiable with acoustic modem software protocol. One example can be found [here](https://github.com/GSO-soslab/evologics_ros/tree/jazzy-devel) for evologics USBL/Acoustic modem device.
 
-# mvp_c2_reporter
+Two way communication are implemented using a priority based dynamic buffer mechanism and optional TDMA scheduling mechanism with programmable time synch occurence slot.
+
+# ROS nodes
+## mvp_c2_serial_comm [document](mvp_c2_serial_comm_node.md)
+`mvp_c2_serial_comm` is a simple driver to interface with transparent serial communicaiton devices such as RFdesign 900ux and Xbee 900mHz.
+
+## mvp_c2_udp_comm [document](mvp_c2_udp_comm_node.md)
+`mvp_c2_udp_comm` is a simple driver to send/receive data with transparent udp communicaiton devices such as Ubiquiti bullet.
+
+
+## mvp_c2_reporter
 `mvp_c2_report` is running on the vehicle side. It reports vehicle status, including odometry, geoposition, roslaunch file, power port, waypoints, helm state, and controller state, and etc.. The information are encoded into DCCL message and published to `mvp_c2/reporter/dccl_msg_tx` topic as a `ByteMultiArray` ROS message.
 
 ### Published topics
@@ -18,7 +30,7 @@
 ### Parameters
 
 
-# mvp_c2_commander
+## mvp_c2_commander
 **mvp_c2_commander** is running on the topside or a master robot. It creates ros services and topics allowing users to start ROS launch files, change helm state, switch controller state, and update waypoints of a remote vehicle. The commands are encoded into DCCL message and published to `mvp_c2/commander/dccl_msg_tx` topic as a `ByteMultiArray` ROS message.
 
 ### Published topics
@@ -32,7 +44,7 @@
 ### Parameters
 
 
-# mvp_c2_traffic_control
+## mvp_c2_traffic_control
 **mvp_c2_traffic_control** is a node that manages the `/dccl_msg_tx` from either `reporter` or the `commander`. It manages the DCCL data coming from and flow into `reporter` and `commander`. More importantly, it controls when and which DCCL message will be send to the communication hardware.
 
 ### Published topics
@@ -45,13 +57,17 @@
 
 ### Parameters
 
-# Full-duplex setup
+
+
+# Setup instruction
+
+## Full-duplex setup
 TDMA to false
 
-# Half-duplex setup (TDMA)
+## Half-duplex setup (TDMA)
 TDMA setup
 
-# Multi-modal comm. setup
+## Multi-modal comm. setup
 
 Multi-modal comm with the same TDMA config
 Multi-modal comm with different TDMA config.
