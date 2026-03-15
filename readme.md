@@ -9,25 +9,18 @@ For acoustic modems, we normally need a customized sensor drivers which could pa
 Two way communication are implemented using a priority based dynamic buffer mechanism and optional TDMA scheduling mechanism with programmable time synch occurence slot.
 
 # ROS nodes
-## mvp_c2_serial_comm [document](mvp_c2_serial_comm_node.md)
-`mvp_c2_serial_comm` is a simple driver to interface with transparent serial communicaiton devices such as RFdesign 900ux and Xbee 900mHz.
+## mvp_c2_serial_comm 
+`mvp_c2_serial_comm` is a simple driver to interface with transparent serial communicaiton devices such as RFdesign 900ux and Xbee 900mHz. [Further document](mvp_c2_serial_comm_node.md)
 
-## mvp_c2_udp_comm [document](mvp_c2_udp_comm_node.md)
-`mvp_c2_udp_comm` is a simple driver to send/receive data with transparent udp communicaiton devices such as Ubiquiti bullet.
+## mvp_c2_udp_comm 
+`mvp_c2_udp_comm` is a simple driver to send/receive data with transparent udp communicaiton devices such as Ubiquiti bullet. [Further document](mvp_c2_udp_comm_node.md)
 
 
 ## mvp_c2_reporter
-`mvp_c2_report` is running on the vehicle side. It reports vehicle status, including odometry, geoposition, roslaunch file, power port, waypoints, helm state, and controller state, and etc.. The information are encoded into DCCL message and published to `mvp_c2/reporter/dccl_msg_tx` topic as a `ByteMultiArray` ROS message.
-
-### Published topics
-
-### Subscribed topics
-
-### Services
-
-### Clients
-
-### Parameters
+`mvp_c2_report` is running on the vehicle side. It reports vehicle status, including odometry, geoposition, roslaunch file, power port, waypoints, helm state, and controller state, and etc.. The information are encoded into DCCL message and published to `mvp_c2/reporter/dccl_msg_tx` topic.
+Meanwhile, it subscribeds to `mvp_c2/reporter/dccl_msg_rx` topic. It parse all the messages coming from this topic and publish to other topics or call services created by vehicle controller and helm software.
+We don't configure this node directly interface with the communication hardware drivers. Instead, we add a `traffic controller` between them to manage the DCCL data traffic.
+[Further document](mvp_c2_reporter.md)
 
 
 ## mvp_c2_commander

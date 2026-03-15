@@ -1,6 +1,6 @@
 # MVP C2 UDP ROS Node
 
-## Introduction
+## Description
 `mvp_c2_udp_comm` is a simple driver to send/receive data with transparent udp communicaiton devices such as Ubiquiti bullet.
 
 ## Published Topics
