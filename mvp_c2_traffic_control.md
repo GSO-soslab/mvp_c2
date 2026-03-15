@@ -23,7 +23,7 @@
 
 ## Parameters
 ### general 
-- `max_frame_size` (Default: `0.0`): The package size for each transmission
+- `max_frame_size` (Default: `0.0`): The package size for each packet transmission
 
 - `tx_interval` (Default: `1.0`): How often (seconds) to wait for fill up the packet.
 
@@ -33,9 +33,11 @@
 
 - `dynamic_buffer.overflow_remove_by_time` (Default: `False`): remove the oldest entry in dynamic buffere regardless of their priority.
 
-- `dynamic_buffer.dccl_intake_message_list` (Default: `[]`): a list of DCCL messages that will be stored in the dynamic buffer.
+- `dynamic_buffer.dccl_intake_message_list` (Default: `[]`): a list of DCCL messages that will be stored in the dynamic buffer. `message rules` is needed for the messages. Higher priority will be trainsmitted out first. `ttl_seconds` is how long the message will expire.
+
     ```
-    # example 
+    #Example:
+
     dccl_intake_message_list: 
             - "Odometry"
             - "GeoPose"
@@ -48,10 +50,6 @@
             - "ReportWpt"
             - "ReportRosLaunch"
 
-    ```
-- Define the `message rules`. Higher priority will be trainsmitted out first. `ttl_seconds` is how long the message will expire.
-    ```
-    #Example:
     message_rules:
       ReportController:
         priority: 10
