@@ -47,7 +47,7 @@ No service created from this node.
 
 - `remote_id` (Default: `1`): Remote id of the outgoing DCCL message.
 
-- `dccl_rx_interval` (Default: `1.0`): Only the earliest DCCL message will be used if multiple DCCL message with the same ID has receiveid with in the time interval.
+- `dccl_rx_interval` (Default: `1.0`): Only the earliest DCCL message will be used if multiple DCCL messages with the same ID has receiveid within the time interval.
 
 - `dccl_tx_interval` (Default: `1.0`): The timer (in seconds) for how often to call the following services and get `roslaunch` status.
     - `controller/get_state` 

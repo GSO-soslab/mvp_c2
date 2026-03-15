@@ -24,18 +24,8 @@ We don't configure this node directly interface with the communication hardware 
 
 
 ## mvp_c2_commander
-**mvp_c2_commander** is running on the topside or a master robot. It creates ros services and topics allowing users to start ROS launch files, change helm state, switch controller state, and update waypoints of a remote vehicle. The commands are encoded into DCCL message and published to `mvp_c2/commander/dccl_msg_tx` topic as a `ByteMultiArray` ROS message.
-
-### Published topics
-
-### Subscribed topics
-
-### Services
-
-### Clients
-
-### Parameters
-
+**mvp_c2_commander** is running on the topside or a master robot. It creates ros services and topics allowing users to start ROS launch files, change helm state, switch controller state, and update waypoints of a remote vehicle. The commands are encoded into DCCL message and published to `mvp_c2/commander/dccl_msg_tx` topic as a `ByteMultiArray` ROS message. Meanwhile, the commander subscribes to `mvp_c2_commander/dccl_msg_rx` topic to receive DCCL messages, then decode them and publish to different topics.
+[Further document](mvp_c2_commander.md)
 
 ## mvp_c2_traffic_control
 **mvp_c2_traffic_control** is a node that manages the `/dccl_msg_tx` from either `reporter` or the `commander`. It manages the DCCL data coming from and flow into `reporter` and `commander`. More importantly, it controls when and which DCCL message will be send to the communication hardware.
