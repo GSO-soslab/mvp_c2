@@ -390,6 +390,7 @@ class TrafficControlRos(Node):
             self.output_buffer = bytearray()
             self.output_msg_names = ""
             self.can_transmit_flag = False #rest the flag to false and wait for it to become true
+            print("### Total entries in Dynamic buffer:", len(self.dynamic_buffer._queue), flush=True)
 
 def main(args=None):
     rclpy.init(args=args)

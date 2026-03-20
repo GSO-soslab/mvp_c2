@@ -26,7 +26,14 @@ class DynamicBufferPython:
                 self._groups[group_name][5][0] = False 
                 is_update = True
             self._groups[group_name] = entry
-
+            
+        #cleeanup expired and invalid
+        now = time.time()
+        self._queue = [
+            e for e in self._queue
+            if e[5][0] and now <= e[1]
+        ]
+        heapq.heapify(self._queue)
         # 2. Handle Capacity (Drop oldest item if full and not just updating a group)
         if len(self._queue) >= self.max_total_size and not is_update:
             print("BUffer overflow", flush = True)
