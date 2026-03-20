@@ -18,7 +18,7 @@ class SerialInterface:
         for i in range(0, len(data), max_bytes):
             chunk = data[i:i + max_bytes]
             self.ser.write(chunk)
-            self.ser.flush()  # Ensure data is sent immediately
+        self.ser.flush()  # Ensure data is sent immediately
 
     def read(self):
         if self.ser.in_waiting > 0:

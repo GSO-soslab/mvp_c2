@@ -58,7 +58,9 @@ class MvpC2SerialRos(Node):
                         # print(f'received:{len(msg.data)}', flush=True)
                         self.ddcl_rx_pub.publish(msg)
                         break 
-                    if counter == 5:
+                    # if counter == 5:
+                    if len(data) >=1000:
+                        print(f'Serial port Jammed', flush=True)
                         break
                 time.sleep(0.005) #delay 5 ms to save cpu
 
