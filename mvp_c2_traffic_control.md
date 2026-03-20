@@ -2,7 +2,6 @@
 
 ## Description
 
-
 ## Published Topics
 
 | Topic | Type | Description |
@@ -27,6 +26,8 @@
 
 - `tx_interval` (Default: `1.0`): How often (seconds) to wait for fill up the packet.
 
+  **IMPORTANT**: the two setting has to be fine tuned to make sure all the messages can be transmitted in a timely fashion. For example, if the packet size is small, only a certain number of messages will be sent. If these messages are coming faster than `tx_interval`, the messages wil take up all the `frame_siz` causing other messages stuck in the buffer. 
+  **Suggestions**: Increase `max_frame_size` to make sure all message can be sent, OR decrease `tx_interval` so more messages can be push through.
 
 ### Dynamic buffer and message rules
 - `dynamic_buffer.max_total_size` (Default: `0.0`): The maximum entries in dynamic buffer
