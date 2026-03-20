@@ -63,13 +63,14 @@ class TrafficControlRos(Node):
         # self.start_time = None
         self.can_transmit_flag = True
         self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
-        self.create_timer(self.tx_interval, self.reset_transmit_flag)
+        self.last_push_time = time.time() ##my wait time for the push
+        # self.create_timer(self.tx_interval, self.reset_transmit_flag)
 
-    def reset_transmit_flag(self):
-        #if still able transmit meaning no frame was transmitted, i will then transmit it
-        if self.can_transmit_flag and self.tdma_in_slot_check():
-            self.push_frame()
-        self.can_transmit_flag = True
+    # def reset_transmit_flag(self):
+    #     #if still able transmit meaning no frame was transmitted, i will then transmit it
+    #     if self.can_transmit_flag and self.tdma_in_slot_check():
+    #         self.push_frame()
+    #     self.can_transmit_flag = True
 
     def load_tdma_config(self):
         #tdma starts in sync slot.
@@ -325,15 +326,19 @@ class TrafficControlRos(Node):
             self.get_logger().error(f"Failed to process DCCL intake: {e}")
 
     def dccl_pop_data(self):
-
+        
         if self.tdma_enable:
             if not self.tdma_in_slot_check():
                 # print("Not in my slot")
                 return
+                
+        if time.time()-self.last_push_time > self.tx_interval:
+            self.push_frame()
+            print("Push wait time has reached", flush = True)
 
         #not ready i will skip
-        if not self.can_transmit_flag:
-            return
+        # if not self.can_transmit_flag:
+            # return
         
         new_data, msg_name = self.dynamic_buffer.pop()
 
@@ -353,12 +358,13 @@ class TrafficControlRos(Node):
 
         #if new data will saturate by buffer
         if self.output_buffer and (len(self.output_buffer) + len(new_data) > self.max_frame_size):
+            self.push_frame()
             if msg_name:
                 if self.output_msg_names == "":
                     self.output_msg_names = msg_name
                 else:
                     self.output_msg_names += f", {msg_name}" # Add separator
-            self.push_frame()
+            
             # log the data for the next time
             self.output_buffer.extend(new_data)
             # self.start_time = None
@@ -380,6 +386,7 @@ class TrafficControlRos(Node):
     def push_frame(self):
         out_msg = ByteMultiArray()
         if self.output_buffer:
+            # self.can_transmit_flag = False #rest the flag to false and wait for it to become true
             out_msg.data = bytearray(self.output_buffer)
             self.dccl_tx_pub.publish(out_msg)
             # self.get_logger().info(f"Buffer data length: {len(out_msg.data)}")
@@ -389,7 +396,8 @@ class TrafficControlRos(Node):
             #reset the buffer 
             self.output_buffer = bytearray()
             self.output_msg_names = ""
-            self.can_transmit_flag = False #rest the flag to false and wait for it to become true
+            self.last_push_time = time.time()
+            # self.can_transmit_flag = True #rest the flag to false and wait for it to become true
             print("### Total entries in Dynamic buffer:", len(self.dynamic_buffer._queue), flush=True)
 
 def main(args=None):
