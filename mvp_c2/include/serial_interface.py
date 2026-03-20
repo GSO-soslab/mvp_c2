@@ -11,7 +11,7 @@ class SerialInterface:
     
     
     def send_packet(self, data):
-        max_bytes = 20
+        max_bytes = 50
         # message = data
         # encoded_message = message.encode('utf-8') 
         # Send data in chunks

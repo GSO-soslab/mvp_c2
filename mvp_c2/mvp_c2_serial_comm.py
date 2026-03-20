@@ -14,6 +14,7 @@ class MvpC2SerialRos(Node):
         self.port = self.declare_parameter('port', '/dev/ttyUSB0').value
         self.baud = self.declare_parameter('baudrate', 9600).value
         self.rx_timer = self.declare_parameter('rx_timer', 0.1).value
+        self.send_chunks = self.declare_parameter('send_chunks_flag', False).value
 
         
         self.ser = SerialInterface(self.port, self.baud)
@@ -33,7 +34,11 @@ class MvpC2SerialRos(Node):
     def dccl_tx_callback(self, msg):
         data = bytearray(ord(c) for c in msg.data)  # if msg.data is a list of characters
         # print(f'send:{len(data)}', flush=True)
-        self.ser.send(data)
+        if self.send_chunks:
+            self.ser.send_packet(data)
+        else:
+            self.ser.send(data)
+        # 
 
     def dccl_rx_callback(self):
         while self.running:
