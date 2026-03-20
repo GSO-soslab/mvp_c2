@@ -62,7 +62,7 @@ class TrafficControlRos(Node):
             print("#####TDMA not enabled####", flush = True)
         # self.start_time = None
         self.can_transmit_flag = True
-        self.create_timer(0.01, self.dccl_pop_data) #pop data fequency
+        self.create_timer(0.02, self.dccl_pop_data) #pop data fequency
         self.last_push_time = time.time() ##my wait time for the push
         # self.create_timer(self.tx_interval, self.reset_transmit_flag)
 
@@ -334,7 +334,7 @@ class TrafficControlRos(Node):
                 
         if time.time()-self.last_push_time > self.tx_interval:
             self.push_frame()
-            print("Push wait time has reached", flush = True)
+            # print("Push wait time has reached", flush = True)
 
         #not ready i will skip
         # if not self.can_transmit_flag:
@@ -385,8 +385,8 @@ class TrafficControlRos(Node):
 
     def push_frame(self):
         out_msg = ByteMultiArray()
+        self.last_push_time = time.time()
         if self.output_buffer:
-            # self.can_transmit_flag = False #rest the flag to false and wait for it to become true
             out_msg.data = bytearray(self.output_buffer)
             self.dccl_tx_pub.publish(out_msg)
             # self.get_logger().info(f"Buffer data length: {len(out_msg.data)}")
@@ -396,8 +396,6 @@ class TrafficControlRos(Node):
             #reset the buffer 
             self.output_buffer = bytearray()
             self.output_msg_names = ""
-            self.last_push_time = time.time()
-            # self.can_transmit_flag = True #rest the flag to false and wait for it to become true
             print("### Total entries in Dynamic buffer:", len(self.dynamic_buffer._queue), flush=True)
 
 def main(args=None):
