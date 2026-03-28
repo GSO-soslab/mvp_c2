@@ -65,6 +65,8 @@ class MvpC2UdpRos(Node):
                 print(f"Error in dccl_rx_callback: {e}", flush = True)
                 break
 
+
+
     def close_udp(self):
         self.running = False
         self.udp_obj.close()

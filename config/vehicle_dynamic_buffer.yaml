@@ -1,0 +1,25 @@
+reporter/mvp_c2_traffic_control:
+  ros__parameters:
+
+    max_frame_size: 50  #maximum size per transmission packet
+
+    # --- Buffer Global Settings ---
+    dynamic_buffer:
+      max_total_size: 150 # how many dccl message entries will be stored
+      overflow_remove_by_time: True
+      dccl_intake_message_list: ["Odometry", "GeoPose", "PowerMonitor", ReportRosLaunch]
+
+    # --- Message Specific Rules ---
+    message_rules:
+      Odometry:
+        priority: 2
+        ttl_seconds: 5
+      GeoPose:
+        priority: 1
+        ttl_seconds: 300
+      PowerMonitor:
+        priority: 4
+        ttl_seconds: 10
+      ReportRosLaunch:
+        priority: 3
+        ttl_seconds: 100

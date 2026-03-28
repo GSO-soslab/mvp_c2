@@ -38,7 +38,9 @@ class MvpC2Reporter(Node):
 
         self.local_id = self.declare_parameter('local_id', 2).value
         self.remote_id = self.declare_parameter('remote_id', 1).value
-        self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 2.0).value
+        self.dccl_rx_interval = self.declare_parameter('dccl_rx_interval', 1.0).value
+        self.dccl_tx_interval = self.declare_parameter('dccl_tx_interval', 1.0).value
+
         self.local_mvp_active = self.declare_parameter('local_mvp_active', True).value
         self.ser_wait_time = self.declare_parameter('service_wait_time', 0.2).value
 
@@ -68,6 +70,7 @@ class MvpC2Reporter(Node):
         self.cpu_info_sub = self.create_subscription(Float32MultiArray, 'local/computer_info', self.cpu_info_callback,10)
         self.altimeter_sub = self.create_subscription(PointStamped, 'local/altimeter', self.altimeter_callback, 10)
 
+        self.feature_geo_points_sub = self.create_subscription(Float32MultiArray, 'local/feature_geo_points_sub', self.feature_geo_points_callback,10)
 
         #client for local controllers
         self.local_set_controller_client = self.create_client(SetBool, 'controller/set')
@@ -80,6 +83,7 @@ class MvpC2Reporter(Node):
         self.local_set_gpio_clients = {}
         self.local_reset_datum_client = self.create_client(Trigger, 'reset_datum')
         
+
         for index in range(len(self.gpio_devices)):
             srv_name = 'gpio_manager/set_power/' + self.gpio_devices[index]
             client = self.create_client(SetBool,srv_name)
@@ -90,10 +94,10 @@ class MvpC2Reporter(Node):
         self.local_joy_pub = self.create_publisher(Joy, 'joy', 10)
 
         #DCCL byte array topic
-        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/dccl_msg_tx', 10)
+        self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/reporter/dccl_msg_tx', 10)
         
         self.dccl_reporter_sub = self.create_subscription(ByteMultiArray, 
-                                                        'mvp_c2/dccl_msg_rx', 
+                                                        'mvp_c2/reporter/dccl_msg_rx', 
                                                         self.dccl_rx_callback, 10)
 
 
@@ -103,24 +107,24 @@ class MvpC2Reporter(Node):
         
         self.dccl_obj = dccl.Codec()
         print("dccl_ros_node initialized", flush=True)
-
+        self.load_dccl()
         ##timer for resetting the dccl tx flag
-        self.local_odom_tx_flag = False
-        self.local_geopose_tx_flag = False
-        self.local_acomm_geopoint_tx_flag = False
+        # self.local_odom_tx_flag = False
+        # self.local_geopose_tx_flag = False
+        # self.local_acomm_geopoint_tx_flag = False
 
-        self.local_report_controller_state_tx_flag = False
-        self.local_report_helm_state_tx_flag = False
-        self.local_report_wpt_tx_flag = False
-        self.local_report_roslaunch_tx_flag = False
-        self.local_report_gpio_tx_flag = False
-        self.local_power_info_tx_flag = False
-        self.local_cpu_info_tx_flag = False
-        self.local_altimeter_info_tx_flag = False
+        # self.local_report_controller_state_tx_flag = False
+        # self.local_report_helm_state_tx_flag = False
+        # self.local_report_wpt_tx_flag = False
+        # self.local_report_roslaunch_tx_flag = False
+        # self.local_report_gpio_tx_flag = False
+        # self.local_power_info_tx_flag = False
+        # self.local_cpu_info_tx_flag = False
+        # self.local_altimeter_info_tx_flag = False
 
 
 
-        self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
+        # self.timer = self.create_timer(self.dccl_tx_interval, self.reset_dccl_tx_flag)
         self.timer2 = self.create_timer(self.dccl_tx_interval, self.report_controller_state_callback)
         self.timer3 = self.create_timer(self.dccl_tx_interval, self.report_helm_state_callback)
         self.timer4 = self.create_timer(self.dccl_tx_interval, self.report_wpt_callback)
@@ -128,19 +132,45 @@ class MvpC2Reporter(Node):
         self.timer5 = self.create_timer(self.dccl_tx_interval, self.report_gpio_callback)
 
 
-    def reset_dccl_tx_flag(self):
-        self.local_odom_tx_flag = False
-        self.local_geopose_tx_flag = False
-        self.local_acomm_geopoint_tx_flag = False
+    # def reset_dccl_tx_flag(self):
+    #     self.local_odom_tx_flag = False
+    #     self.local_geopose_tx_flag = False
+    #     self.local_acomm_geopoint_tx_flag = False
 
-        self.local_report_controller_state_tx_flag = False
-        self.local_report_helm_state_tx_flag = False
-        self.local_report_wpt_tx_flag = False
-        self.local_report_roslaunch_tx_flag = False
-        self.local_report_gpio_tx_flag = False
-        self.local_power_info_tx_flag = False
-        self.local_cpu_info_tx_flag = False
-        self.local_altimeter_info_tx_flag = False
+    #     self.local_report_controller_state_tx_flag = False
+    #     self.local_report_helm_state_tx_flag = False
+    #     self.local_report_wpt_tx_flag = False
+    #     self.local_report_roslaunch_tx_flag = False
+    #     self.local_report_gpio_tx_flag = False
+    #     self.local_power_info_tx_flag = False
+    #     self.local_cpu_info_tx_flag = False
+    #     self.local_altimeter_info_tx_flag = False
+
+
+    def load_dccl(self):
+        self.dccl_obj.load('Joy')
+        self.dccl_obj.load('PWM')
+        self.dccl_obj.load('Odometry')
+        self.dccl_obj.load('GeoPose')
+        self.dccl_obj.load('PowerMonitor')
+        self.dccl_obj.load('CPUMonitor')
+        self.dccl_obj.load('AltimeterPointStamped')
+        self.dccl_obj.load('AcommGeoPoint')
+        self.dccl_obj.load('FeatureGeoPoints')
+        self.dccl_obj.load('SetPowerPort')
+        self.dccl_obj.load('ReportPowerPort')
+        self.dccl_obj.load('SetController')
+        self.dccl_obj.load('ReportController')
+        self.dccl_obj.load('SetHelm')
+        self.dccl_obj.load('ReportHelm')
+        self.dccl_obj.load('SetWpt')
+        self.dccl_obj.load('ReportWpt')
+        self.dccl_obj.load('ResetDatum')
+        self.dccl_obj.load('RosLaunch')
+        self.dccl_obj.load('ReportRosLaunch')
+        self.dccl_obj.load('TdmaMasterSyncMsg')
+
+        self.last_dccl_rx_time = [time.time()] * 50
 
 
 
@@ -155,127 +185,140 @@ class MvpC2Reporter(Node):
         # flag, data = check_dccl(msg.data)
 
         if flag == True:
-            message_id = self.dccl_obj.id(data)
-            print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
+            try:
+                message_id = self.dccl_obj.id(data)
+                print(f'{round(time.time(), 3)}: dccl_message_id: {message_id}, data_len: {len(data)}', flush=True)
+                #get the remote id
+                proto_msg = self.dccl_obj.decode(data)
+            except Exception as e:
+                print("Couldn't decode", flush=True)
+                return
+            except dccl.Exception:
+                print("Couldn't decode", flush=True)
+                return
+            if"remote_id" in proto_msg.DESCRIPTOR.fields_by_name  and proto_msg.remote_id == self.local_id:
+                # print(message_id, flush = True)
+                if time.time() - self.last_dccl_rx_time[message_id] < self.dccl_rx_interval:
+                    print("The same message id recived deemed redudant", flush=True)
+                    return
+                else:
+                    #update the time and proceed to decoding
+                    self.last_dccl_rx_time[message_id] = time.time()
 
-            # print(message_id, flush = True)
-            #Joy
-            if message_id == 1:
-                try:
-                    self.dccl_obj.load('Joy')
-                    proto_msg = self.dccl_obj.decode(data)
-                    # print(decoded_msg, flush = True)
-                    msg = Joy()
-                    sec = int(proto_msg.time)  
-                    nanosec = int((proto_msg.time - sec) * 1e9)  
-                    msg.header.stamp.sec = sec
-                    msg.header.stamp.nanosec = nanosec
-                    msg.axes = proto_msg.axes
-                    msg.buttons = proto_msg.buttons
-                    self.local_joy_pub.publish(msg)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                #Joy
+                if message_id == 1:
+                    try:
+                        # proto_msg = self.dccl_obj.decode(data)
+                        # print(decoded_msg, flush = True)
+                        msg = Joy()
+                        sec = int(proto_msg.time)  
+                        nanosec = int((proto_msg.time - sec) * 1e9)  
+                        msg.header.stamp.sec = sec
+                        msg.header.stamp.nanosec = nanosec
+                        msg.axes = proto_msg.axes
+                        msg.buttons = proto_msg.buttons
+                        self.local_joy_pub.publish(msg)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            #set controller
-            if message_id ==22:
-                try: 
-                    self.dccl_obj.load('SetController')
-                    proto_msg = self.dccl_obj.decode(data)
-                    self.local_set_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
-                    request = SetBool.Request()
-                    request.data = proto_msg.status
+                #set controller
+                if message_id ==22:
+                    try: 
+                        # proto_msg = self.dccl_obj.decode(data)
+                        self.local_set_controller_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                        request = SetBool.Request()
+                        request.data = proto_msg.status
 
-                    future = self.local_set_controller_client.call_async(request)
-                    # rclpy.spin_until_future_complete(self, future)
+                        future = self.local_set_controller_client.call_async(request)
+                        # rclpy.spin_until_future_complete(self, future)
 
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            ##change helm state
-            if message_id == 30:
-                # print("got change helm ", flush = True)
-                try:
-                    self.dccl_obj.load('SetHelm')
-                    proto_msg = self.dccl_obj.decode(data)
-                    # print(proto_msg, flush = True)
-                    self.local_set_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                ##change helm state
+                if message_id == 30:
+                    # print("got change helm ", flush = True)
+                    try:
+                        # proto_msg = self.dccl_obj.decode(data)
+                        # print(proto_msg, flush = True)
+                        self.local_set_helm_client.wait_for_service(timeout_sec=self.ser_wait_time)
 
-                    request = ChangeState.Request()
-                    request.state = self.default_state_list[proto_msg.state]
-                    # print(request.state, flush = True)
-                    request.caller = "dccl"
-                    future = self.local_set_helm_client.call_async(request)
-                    # rclpy.spin_until_future_complete(self, future)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                        request = ChangeState.Request()
+                        request.state = self.default_state_list[proto_msg.state]
+                        # print(request.state, flush = True)
+                        request.caller = "dccl"
+                        future = self.local_set_helm_client.call_async(request)
+                        # rclpy.spin_until_future_complete(self, future)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            #roslaunch request
-            if message_id == 40: 
-                try:
-                    self.dccl_obj.load('RosLaunch')
-                    proto_msg = self.dccl_obj.decode(data)
-                    index = proto_msg.index
-                    req = proto_msg.req
-                    print(f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {req}", flush = True)
-                    if req == True:
-                        self.roslauncher.start_launch(self.launch_packages[index], self.launch_file_names[index])
-                    else:
-                        self.roslauncher.stop_launch(self.launch_packages[index], self.launch_file_names[index])
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                #roslaunch request
+                if message_id == 40: 
+                    try:
+                        # proto_msg = self.dccl_obj.decode(data)
+                        index = proto_msg.index
+                        req = proto_msg.req
+                        print(f"{self.launch_packages[index]}/{self.launch_file_names[index]} | set to {req}", flush = True)
+                        if req == True:
+                            self.roslauncher.start_launch(self.launch_packages[index], self.launch_file_names[index])
+                        else:
+                            self.roslauncher.stop_launch(self.launch_packages[index], self.launch_file_names[index])
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            #set power request
-            if message_id == 20:
-                try:
-                    self.dccl_obj.load('SetPowerPort')
-                    proto_msg = self.dccl_obj.decode(data)
-                    index = proto_msg.index
-                    request = SetBool.Request()
-                    request.data = proto_msg.state
-                    future = self.local_set_gpio_clients[index].call_async(request)
-                    print(f"{self.gpio_devices[index]} Power set to {request.data}", flush =True)
-                    
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                #set power request
+                if message_id == 20:
+                    try:
+                        # proto_msg = self.dccl_obj.decode(data)
+                        index = proto_msg.index
+                        request = SetBool.Request()
+                        request.data = proto_msg.state
+                        future = self.local_set_gpio_clients[index].call_async(request)
+                        print(f"{self.gpio_devices[index]} Power set to {request.data}", flush =True)
+                        
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
 
-            ##waypoint set dccl
-            if message_id == 32:
-                try:
-                    self.dccl_obj.load('SetWpt')
-                    proto_msg = self.dccl_obj.decode(data)
-                    self.local_set_wpt_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                ##waypoint set dccl
+                if message_id == 32:
+                    try:
+                        # proto_msg = self.dccl_obj.decode(data)
+                        self.local_set_wpt_client.wait_for_service(timeout_sec=self.ser_wait_time)
 
-                    request = SendWaypoints.Request()  
-                    request.type = 'geopath'
+                        request = SendWaypoints.Request()  
+                        request.type = 'geopath'
 
-                    request.wpt = [Waypoint() for _ in range(proto_msg.wpt_size)]
-                    for i in range(proto_msg.wpt_size):
-                        request.wpt[i].ll_wpt.latitude = proto_msg.latitude[i]*0.01
-                        request.wpt[i].ll_wpt.longitude = proto_msg.longitude[i]*0.01
-                        request.wpt[i].ll_wpt.altitude = proto_msg.altitude[i]
-                        request.wpt[i].u = proto_msg.u[i]
-                    future = self.local_set_wpt_client.call_async(request)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
-            
-            ##reset datum
-            if message_id == 34:
-                try:
-                    self.dccl_obj.load('ResetDatum')
-                    proto_msg = self.dccl_obj.decode(data)
-                    self.local_reset_datum_client.wait_for_service(timeout_sec=self.ser_wait_time)
-                    request = Trigger.Request()  
-                    future = self.local_reset_datum_client.call_async(request)
-                    print("Datum reset triggered", flush =True)
-                except Exception as e:
-                    # Print the exception message for debugging
-                    print(f"Decoding error: {e}", flush=True)
+                        request.wpt = [Waypoint() for _ in range(proto_msg.wpt_size)]
+                        for i in range(proto_msg.wpt_size):
+                            request.wpt[i].ll_wpt.latitude = proto_msg.latitude[i]*0.01
+                            request.wpt[i].ll_wpt.longitude = proto_msg.longitude[i]*0.01
+                            request.wpt[i].ll_wpt.altitude = proto_msg.altitude[i]
+                            request.wpt[i].u = proto_msg.u[i]
+                        future = self.local_set_wpt_client.call_async(request)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
+                
+                ##reset datum
+                if message_id == 34:
+                    try:
+                        # proto_msg = self.dccl_obj.decode(data)
+                        self.local_reset_datum_client.wait_for_service(timeout_sec=self.ser_wait_time)
+                        request = Trigger.Request()  
+                        future = self.local_reset_datum_client.call_async(request)
+                        print("Datum reset triggered", flush =True)
+                    except Exception as e:
+                        # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
+            else:
+                print("DCCL filtered because remote_id don't match my local id", flush=True)
+
+                
     ##publish dccl 
     def publish_dccl(self, proto):
         dccl_msg = ByteMultiArray()
@@ -290,7 +333,6 @@ class MvpC2Reporter(Node):
     #odometry callback
     def odom_callback(self, msg):
         # print("got odometry", flush =True)
-        self.dccl_obj.load('Odometry')
         proto = mvp_cmd_dccl_pb2.Odometry()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -315,14 +357,13 @@ class MvpC2Reporter(Node):
         # proto.frame_id = msg.header.frame_id
         # proto.child_frame_id = msg.child_frame_id
         
-        if self.local_odom_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_odom_tx_flag = True
+        # if self.local_odom_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_odom_tx_flag = True
 
     #geopose callback
     def geopose_callback(self, msg):
         # print("got geopose")
-        self.dccl_obj.load('GeoPose')
         proto = mvp_cmd_dccl_pb2.GeoPose()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -339,14 +380,13 @@ class MvpC2Reporter(Node):
         
         # proto.frame_id = msg.header.frame_id
     
-        if self.local_geopose_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_geopose_tx_flag = True
+        # if self.local_geopose_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_geopose_tx_flag = True
 
     #acomm geopose topic (from usbl)
     def acomm_geopoint_callback(self, msg):
         # print("got acom_geopose")
-        self.dccl_obj.load('AcommGeoPoint')
         proto = mvp_cmd_dccl_pb2.AcommGeoPoint()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
@@ -355,88 +395,100 @@ class MvpC2Reporter(Node):
         proto.longitude = msg.position.longitude*100
         proto.altitude = msg.position.altitude
             
-        if self.local_acomm_geopoint_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_acomm_geopoint_tx_flag = True
+        # if self.local_acomm_geopoint_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_acomm_geopoint_tx_flag = True
 
     #power monitor
     def power_vi_callback(self, msg):
-        self.dccl_obj.load('PowerMonitor')
         proto = mvp_cmd_dccl_pb2.PowerMonitor()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
         proto.data.extend([msg.data[0], msg.data[1]])
-        if self.local_power_info_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_power_info_tx_flag = True
+        # if self.local_power_info_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_power_info_tx_flag = True
     
     #cpu monitor
     def cpu_info_callback(self, msg):
-        self.dccl_obj.load('CPUMonitor')
         proto = mvp_cmd_dccl_pb2.CPUMonitor()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
         proto.data.extend([ msg.data[0], msg.data[1], msg.data[2]])
-        if self.local_cpu_info_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_cpu_info_tx_flag = True
+        # if self.local_cpu_info_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_cpu_info_tx_flag = True
 
     #altimeter
     def altimeter_callback(self, msg):
-        self.dccl_obj.load('AltimeterPointStamped')
         proto = mvp_cmd_dccl_pb2.AltimeterPointStamped()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
         proto.remote_id = self.remote_id
         proto.data = msg.point.z
-        if self.local_altimeter_info_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_altimeter_info_tx_flag = True
+        # if self.local_altimeter_info_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_altimeter_info_tx_flag = True
+
+    #feature points
+    #feature points
+    def feature_geo_points_callback(self, msg):
+        proto = mvp_cmd_dccl_pb2.FeatureGeoPoints()
+        #msg.data = [lat, lon, alt, lat, lon, alt]
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.point_size = int(len(msg.data)/3)
+
+        for i in range(proto.point_size):
+            proto.latitude.append(msg.data[i]*100)
+            proto.longitude.append(msg.data[i+1]*100)
+            proto.altitude.append(msg.data[i+2]) 
+        self.publish_dccl(proto)
+
 
     def report_roslaunch_callback(self):
-        if(self.local_report_roslaunch_tx_flag == False):
+        # if(self.local_report_roslaunch_tx_flag == False):
 
-            running_launches = self.roslauncher.list_running_launches()
-            # data = []
-            self.dccl_obj.load('ReportRosLaunch')
-            proto = mvp_cmd_dccl_pb2.ReportRosLaunch()
-            proto.time =round(time.time(), 3)
-            proto.local_id = self.local_id
-            proto.remote_id = self.remote_id
+        running_launches = self.roslauncher.list_running_launches()
+        # data = []
+        proto = mvp_cmd_dccl_pb2.ReportRosLaunch()
+        proto.time =round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
 
-            for index, name in enumerate(self.launch_file_names):
-                key = (self.launch_packages[index], name)
-                if key in running_launches:
-                    proto.state.append(1)
-                    # data.append(True)
-                else:
-                    proto.state.append(0)
-            self.publish_dccl(proto)
-            self.local_report_roslaunch_tx_flag = True
+        for index, name in enumerate(self.launch_file_names):
+            key = (self.launch_packages[index], name)
+            if key in running_launches:
+                proto.state.append(1)
+                # data.append(True)
+            else:
+                proto.state.append(0)
+        self.publish_dccl(proto)
+            # self.local_report_roslaunch_tx_flag = True
     
     ##report GPIO power
     def report_gpio_callback(self):
-        if(self.local_report_gpio_tx_flag == False):
-            if self.local_report_gpio_client.service_is_ready():
-                flag = self.local_report_gpio_client.wait_for_service(timeout_sec=self.ser_wait_time)
-                if flag:
-                    request =Trigger.Request()
-                    future = self.local_report_gpio_client.call_async(request)
-                    future.add_done_callback(self.report_gpio_state_callback_done)
-                # data = []
-                else:
-                    print(f'Service: [{self.local_report_gpio_client.srv_name}] Timeout', flush=True)
+        # if(self.local_report_gpio_tx_flag == False):
+        if self.local_report_gpio_client.service_is_ready():
+            flag = self.local_report_gpio_client.wait_for_service(timeout_sec=self.ser_wait_time)
+            if flag:
+                request =Trigger.Request()
+                future = self.local_report_gpio_client.call_async(request)
+                future.add_done_callback(self.report_gpio_state_callback_done)
+            # data = []
             else:
-                print(f'Service: [{self.local_report_gpio_client.srv_name}] Not available', flush=True)
+                print(f'Service: [{self.local_report_gpio_client.srv_name}] Timeout', flush=True)
+        else:
+            print(f'Service: [{self.local_report_gpio_client.srv_name}] Not available', flush=True)
 
     def report_gpio_state_callback_done(self, future):
         response = future.result()
-        self.dccl_obj.load('ReportPowerPort')
         proto = mvp_cmd_dccl_pb2.ReportPowerPort()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
@@ -450,7 +502,7 @@ class MvpC2Reporter(Node):
                 proto.state.append(int(status))
                 
         self.publish_dccl(proto)
-        self.local_report_gpio_tx_flag = True
+        # self.local_report_gpio_tx_flag = True
 
     #report controller backback
     def report_controller_state_callback(self):
@@ -475,7 +527,6 @@ class MvpC2Reporter(Node):
         response = future.result()
         # self.get_logger().info(f'Service response: {response.message}')
         ##make dccl
-        self.dccl_obj.load('ReportController')
         proto = mvp_cmd_dccl_pb2.ReportController()
         # proto.time = msg.header.stamp.to_sec()
         proto.time =round(time.time(), 3)
@@ -483,9 +534,9 @@ class MvpC2Reporter(Node):
         proto.remote_id = self.remote_id
         proto.status = response.message == "enabled"
         # print(proto, flush = True)
-        if self.local_report_controller_state_tx_flag is False:
-            self.publish_dccl(proto)
-            self.local_report_controller_state_tx_flag = True
+        # if self.local_report_controller_state_tx_flag is False:
+        self.publish_dccl(proto)
+            # self.local_report_controller_state_tx_flag = True
         return response      
 
 
@@ -513,7 +564,6 @@ class MvpC2Reporter(Node):
         response = future.result()
         # self.get_logger().info(f'Service response: {response}')
         ##make dccl
-        self.dccl_obj.load('ReportHelm')
         proto = mvp_cmd_dccl_pb2.ReportHelm()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
@@ -532,10 +582,10 @@ class MvpC2Reporter(Node):
         proto.connected_state.extend(indices) 
 
         # print(proto, flush = True)
-        if self.local_report_helm_state_tx_flag is False:
-            self.publish_dccl(proto)
+        # if self.local_report_helm_state_tx_flag is False:
+        self.publish_dccl(proto)
             # print(proto, flush = True)
-            self.local_report_helm_state_tx_flag = True
+            # self.local_report_helm_state_tx_flag = True
         return response   
     
     def report_wpt_callback(self):
@@ -561,7 +611,6 @@ class MvpC2Reporter(Node):
         # print(response)
         # self.get_logger().info(f'Service response: {response}')
         ##make dccl
-        self.dccl_obj.load('ReportWpt')
         proto = mvp_cmd_dccl_pb2.ReportWpt()
         proto.time =round(time.time(), 3)
         proto.local_id = self.local_id
@@ -575,15 +624,15 @@ class MvpC2Reporter(Node):
             proto.u.append(response.wpt[i].u)
             # print (i)                           
 
-        if self.local_report_wpt_tx_flag is False:
+        # if self.local_report_wpt_tx_flag is False:
             # dccl_msg = ByteMultiArray()
             # dccl_msg.data = self.dccl_obj.encode(proto)
             # dccl_msg.data = package_dccl(dccl_msg.data)
             # print(len(dccl_msg.data))
             # print(dccl_msg.data, flush=True)
-            self.publish_dccl(proto)
+        self.publish_dccl(proto)
             # print(proto, flush = True)
-            self.local_report_wpt_tx_flag = True
+            # self.local_report_wpt_tx_flag = True
         return response   
 
 def main(args=None):

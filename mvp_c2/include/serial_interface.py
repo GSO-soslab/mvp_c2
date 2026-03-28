@@ -11,14 +11,14 @@ class SerialInterface:
     
     
     def send_packet(self, data):
-        max_bytes = 20
+        max_bytes = 50
         # message = data
         # encoded_message = message.encode('utf-8') 
         # Send data in chunks
         for i in range(0, len(data), max_bytes):
             chunk = data[i:i + max_bytes]
             self.ser.write(chunk)
-            self.ser.flush()  # Ensure data is sent immediately
+        self.ser.flush()  # Ensure data is sent immediately
 
     def read(self):
         if self.ser.in_waiting > 0:
