@@ -356,12 +356,10 @@ class MvpC2Commander(Node):
                         # proto_msg = self.dccl_obj.decode(data)
                         msg = Float32MultiArray()
                         sec = int(proto_msg.time)  
-                        nanosec = int((proto_msg.time - sec) * 1e9)  
+                        nanosec = int((proto_msg.time - sec) * 1e9)
                         for i in range(proto_msg.point_size):
-                            msg.data[i] = proto_msg.latitude[i]*0.01
-                            msg.data[i+1] = proto_msg.longitude[i]*0.01
-                            msg.data[i+2] = proto_msg.altitude[i]
-                            self.remote_feature_points_pub.publish(msg)
+                            msg.data.extend([proto_msg.latitude[i]*0.01, proto_msg.longitude[i]*0.01, proto_msg.altitude[i]])
+                        self.remote_feature_points_pub.publish(msg)
                     except Exception as e:
                         # Print the exception message for debugging
                         print(f"Decoding error: {e}", flush=True)
