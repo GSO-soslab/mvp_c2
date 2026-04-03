@@ -106,9 +106,9 @@ message FeatureGeoPoints{
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 point_size = 4 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     //lat lon are in deci degrees now
-    repeated double latitude = 5 [ (dccl.field) = {min: -9000.0 max: 9000.0 precision: 4 max_repeat: 5 } ];
-    repeated double longitude = 6 [ (dccl.field) = {min: -18000.0 max: 18000.0 precision: 4 max_repeat: 5 } ];
-    repeated double altitude = 7 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 1 max_repeat: 5 } ];
+    repeated double latitude = 5 [ (dccl.field) = {min: -9000.0 max: 9000.0 precision: 4 max_repeat: 10 } ];
+    repeated double longitude = 6 [ (dccl.field) = {min: -18000.0 max: 18000.0 precision: 4 max_repeat: 10 } ];
+    repeated double altitude = 7 [ (dccl.field) = {min: -100.0 max: 100.0 precision: 1 max_repeat: 10 } ];
 }
 
 message SetPowerPort{
