@@ -272,33 +272,41 @@ class TrafficControlRos(Node):
         data = bytearray(ord(c) for c in msg.data) 
         
         dccl_msg = bytearray()
+        search_start = True
 
         for i in range(len(data)):
-            dccl_msg.append(data[i])
-
-            if len(dccl_msg) >= 4 and dccl_msg[-4] == 42 and dccl_msg[-1]==ord('\n'): #the four last chars are *AB\n
-                #check and peak the message
-                flag, cdata = check_dccl(dccl_msg)
-                if flag:
-                    try:
-                        message_id = self.dccl_codec.id(cdata)
-                    except Exception as e:
-                        print("Could not Deode!", flush=True)
-                        return
-                    except dccl.DcclException:
-                        print("Could not Deode!", flush=True)
-                        return
-
-                #if it is master sync message i will update the tdma setting
-                if flag and message_id == 51:
-                    self.tdma_slave_update(cdata)
-                    #not sending down
-                    # return
-                #message will still be published so we can bag
-                msg = ByteMultiArray()
-                msg.data = dccl_msg
-                self.dccl_rx_pub.publish(msg)
+            #detect the start first.
+            if search_start and data[i] == ord('$'):
+                search_start = False
                 dccl_msg = bytearray()
+
+            if not search_start:
+                dccl_msg.append(data[i])
+                
+                if len(dccl_msg) >= 7 and dccl_msg[-4] == 42 and dccl_msg[-1]==ord('\n'): #the four last chars are *AB\n
+                    #check and peak the message
+                    flag, cdata = check_dccl(dccl_msg)
+                    if flag:
+                        try:
+                            message_id = self.dccl_codec.id(cdata)
+                        except Exception as e:
+                            print("Could not Deode!", flush=True)
+                            return
+                        except dccl.DcclException:
+                            print("Could not Deode!", flush=True)
+                            return
+
+                    #if it is master sync message i will update the tdma setting
+                    if flag and message_id == 51:
+                        self.tdma_slave_update(cdata)
+                        #not sending down
+                        # return
+                    #message will still be published so we can bag
+                    msg = ByteMultiArray()
+                    msg.data = dccl_msg
+                    self.dccl_rx_pub.publish(msg)
+                    dccl_msg = bytearray()
+                    search_start = True
                  
     def dccl_tx_callback(self, msg):
         try:
