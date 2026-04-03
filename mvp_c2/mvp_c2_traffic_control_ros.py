@@ -330,6 +330,9 @@ class TrafficControlRos(Node):
                     ttl_seconds=rules['ttl_seconds'], 
                     group_name=rules['group']
                 )
+            else:
+                self.get_logger().info(f"{msg_name} is descarded because is not included in the intake param")
+                
         except Exception as e:
             self.get_logger().error(f"Failed to process DCCL intake: {e}")
 
