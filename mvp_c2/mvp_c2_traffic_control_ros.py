@@ -283,7 +283,7 @@ class TrafficControlRos(Node):
             if not search_start:
                 dccl_msg.append(data[i])
                 
-                if len(dccl_msg) >= 4 and dccl_msg[-4] == 42 and dccl_msg[-1]==ord('\n'): #the four last chars are *AB\n
+                if len(dccl_msg) >= 7 and dccl_msg[-4] == 42 and dccl_msg[-1]==ord('\n'): #the four last chars are *AB\n
                     #check and peak the message
                     flag, cdata = check_dccl(dccl_msg)
                     if flag:
