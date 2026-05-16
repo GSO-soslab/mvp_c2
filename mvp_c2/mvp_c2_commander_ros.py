@@ -76,6 +76,7 @@ class MvpC2Commander(Node):
         self.remote_cpu_info_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/computer_info',10)
         self.remote_altimeter_pub = self.create_publisher(PointStamped, topic_prefix + '/altimeter',10)
         self.remote_feature_points_pub = self.create_publisher(Float32MultiArray, topic_prefix + '/feature_points',10)
+        self.remote_feature_points_navsat_pub = self.create_publisher(NavSatFix, topic_prefix + '/feature_points_navsatfix',10)
 
 
         self.local_joy_sub = self.create_subscription(Joy, topic_prefix + '/joy', self.joy_callback, 10)
@@ -356,12 +357,28 @@ class MvpC2Commander(Node):
                         # proto_msg = self.dccl_obj.decode(data)
                         msg = Float32MultiArray()
                         sec = int(proto_msg.time)  
-                        nanosec = int((proto_msg.time - sec) * 1e9)  
+                        nanosec = int((proto_msg.time - sec) * 1e9)
+                        
+                        msg_navsatfix = NavSatFix()
+                        msg_navsatfix.header.stamp.sec = sec
+                        msg_navsatfix.header.stamp.nanosec = nanosec
+                        msg_navsatfix.status.status = 0
+                        msg_navsatfix.status.service = 1
+                        msg_navsatfix.position_covariance_type = 1
+
                         for i in range(proto_msg.point_size):
-                            msg.data[i] = proto_msg.latitude[i]*0.01
-                            msg.data[i+1] = proto_msg.longitude[i]*0.01
-                            msg.data[i+2] = proto_msg.altitude[i]
-                            self.remote_feature_points_pub.publish(msg)
+                            fp_lat = proto_msg.latitude[i]*0.01
+                            fp_lon = proto_msg.longitude[i]*0.01
+                            fp_alt = proto_msg.altitude[i]
+                            
+                            msg_navsatfix.latitude = fp_lat
+                            msg_navsatfix.longitude = fp_lon
+                            msg_navsatfix.altitude = fp_alt
+                            self.remote_feature_points_navsat_pub.publish(msg_navsatfix)
+
+                            msg.data.extend([fp_lat, fp_lon, fp_alt])
+
+                        self.remote_feature_points_pub.publish(msg)
                     except Exception as e:
                         # Print the exception message for debugging
                         print(f"Decoding error: {e}", flush=True)

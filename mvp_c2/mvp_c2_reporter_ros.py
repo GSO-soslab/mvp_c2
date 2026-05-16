@@ -436,7 +436,6 @@ class MvpC2Reporter(Node):
             # self.local_altimeter_info_tx_flag = True
 
     #feature points
-    #feature points
     def feature_geo_points_callback(self, msg):
         proto = mvp_cmd_dccl_pb2.FeatureGeoPoints()
         #msg.data = [lat, lon, alt, lat, lon, alt]
@@ -446,9 +445,9 @@ class MvpC2Reporter(Node):
         proto.point_size = int(len(msg.data)/3)
 
         for i in range(proto.point_size):
-            proto.latitude.append(msg.data[i]*100)
-            proto.longitude.append(msg.data[i+1]*100)
-            proto.altitude.append(msg.data[i+2]) 
+            proto.latitude.append(msg.data[i*3]*100)
+            proto.longitude.append(msg.data[i*3+1]*100)
+            proto.altitude.append(msg.data[i*3+2]) 
         self.publish_dccl(proto)
 
 
