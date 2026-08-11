@@ -4,7 +4,7 @@ import dccl
 import signal
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Bool, ByteMultiArray, Float32MultiArray
+from std_msgs.msg import Bool, ByteMultiArray, Float32MultiArray, Float64
 from sensor_msgs.msg import Joy
 from geometry_msgs.msg import PointStamped
 # from mvp_msgs.srv import SetString
@@ -92,6 +92,7 @@ class MvpC2Reporter(Node):
 
         #joy stick publisher from base station
         self.local_joy_pub = self.create_publisher(Joy, 'joy', 10)
+        self.local_pwm_pub = self.create_publisher(Float64, 'local/pwm', 10)
 
         #DCCL byte array topic
         self.ddcl_reporter_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/reporter/dccl_msg_tx', 10)
@@ -220,6 +221,15 @@ class MvpC2Reporter(Node):
                         self.local_joy_pub.publish(msg)
                     except Exception as e:
                         # Print the exception message for debugging
+                        print(f"Decoding error: {e}", flush=True)
+
+                #PWM command (e.g. lumen light brightness)
+                if message_id == 2:
+                    try:
+                        msg = Float64()
+                        msg.data = proto_msg.data
+                        self.local_pwm_pub.publish(msg)
+                    except Exception as e:
                         print(f"Decoding error: {e}", flush=True)
 
                 #set controller

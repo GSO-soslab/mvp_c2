@@ -80,6 +80,7 @@ class MvpC2Commander(Node):
 
 
         self.local_joy_sub = self.create_subscription(Joy, topic_prefix + '/joy', self.joy_callback, 10)
+        self.local_pwm_cmd_sub = self.create_subscription(Float32MultiArray, topic_prefix + '/pwm_cmd', self.pwm_cmd_callback, 10)
 
         ##service for access remote controllers
         self.remote_set_controller_srv = self.create_service(SetBool, topic_prefix + '/controller/set', self.remote_set_controller_callback)
@@ -481,6 +482,19 @@ class MvpC2Commander(Node):
         # if self.local_joy_tx_flag is False:
         self.publish_dccl(proto)
             # self.local_joy_tx_flag = True
+
+    #pwm command callback (e.g. lumen light brightness)
+    def pwm_cmd_callback(self, msg):
+        if len(msg.data) < 2:
+            print("pwm_cmd message needs [index, data]", flush=True)
+            return
+        proto = mvp_cmd_dccl_pb2.PWM()
+        proto.time = round(time.time(), 3)
+        proto.local_id = self.local_id
+        proto.remote_id = self.remote_id
+        proto.index = int(msg.data[0])
+        proto.data = msg.data[1]
+        self.publish_dccl(proto)
 
     #set remote controller service callback
     def remote_set_controller_callback(self, request, response):
