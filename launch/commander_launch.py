@@ -30,29 +30,29 @@ def generate_launch_description():
         #     ]
         # ),
 
-        Node(
-            package = 'mvp_c2',
-            namespace = 'commander',
-            executable='mvp_c2_udp_comm',
-            name = 'commander_c2_udp_comm',
-            output='screen',
-            prefix=['stdbuf -o L'],
-            parameters=[udp_comm_setting_file],
-            remappings=[
-                ('dccl_msg_tx', 'mvp_c2/dccl_msg_tx'),
-                ('dccl_msg_rx', 'mvp_c2/dccl_msg_rx'),
-            ]
-        ),
+        # Node(
+        #     package = 'mvp_c2',
+        #     namespace = 'commander',
+        #     executable='mvp_c2_udp_comm',
+        #     name = 'commander_c2_udp_comm',
+        #     output='screen',
+        #     prefix=['stdbuf -o L'],
+        #     parameters=[udp_comm_setting_file],
+        #     remappings=[
+        #         ('dccl_msg_tx', 'mvp_c2/dccl_msg_tx'),
+        #         ('dccl_msg_rx', 'mvp_c2/dccl_msg_rx'),
+        #     ]
+        # ),
     #commander node
-        Node(
-            package='mvp_c2',
-            namespace='commander',
-            executable='mvp_c2_commander_ros',
-            name='mvp_c2_commander',
-            output='screen',
-            prefix=['stdbuf -o L'],
-            parameters=[commander_setting_file],
-        ),
+        # Node(
+        #     package='mvp_c2',
+        #     namespace='commander',
+        #     executable='mvp_c2_commander_ros',
+        #     name='mvp_c2_commander',
+        #     output='screen',
+        #     prefix=['stdbuf -o L'],
+        #     parameters=[commander_setting_file],
+        # ),
 
         # Node(
         #     package="joy",

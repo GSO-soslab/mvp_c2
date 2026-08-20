@@ -33,47 +33,24 @@ class TrafficControlRos(Node):
         self.dccl_codec = dccl.Codec()
 
         #load comm types and settings
-        self.load_comm_config()
+        self.load_comm_conifg()
 
-        #load dynamic buffer
-        self.load_dynamic_buffer_config()
+         # initialize the output buffer
+        self.output_buffer = bytearray()
+        self.output_msg_names = ""
         
         #ros stuff
         self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_tx', self.dccl_tx_callback, 10) #from reporter/commander
-        self.dccl_rx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_rx', self.dccl_rx_callback, 10) #from hardware
-
-        self.dccl_tx_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_controlled_tx', 10)  #to hardware
-        self.dccl_tx_msg_pub = self.create_publisher(String, 'mvp_c2/traffic_control/dccl_msg_controlled_tx_names', 10)  #to hardware (dccl message name string array)
-
+        self.dccl_tx_msg_pub = self.create_publisher(String, 'mvp_c2/traffic_control/dccl_msg_controlled_tx_names', 10)  #dccl message name string array
         self.dccl_rx_pub = self.create_publisher(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_controlled_rx', 10)  #to reporter/commander
 
-        # self.tx_interval = self.get_parameter('tx_interval').value
-        # self.tx_msg_construction_timeout = self.get_parameter('tx_msg_construction_timeout').value
+        print("setup complete")
 
-        self.tx_interval = self.get_parameter_or(
-            'tx_interval', 1.0
-        ).value
+        # self.tdma_enable = self.get_parameter_or('tdma_enable', False).value
 
-
-        self.tdma_enable = self.get_parameter_or('tdma_enable', False).value
-
-        if self.tdma_enable:
-            print("#####TDMA  enabled####", flush = True)
-            self.dccl_codec.load('TdmaMasterSyncMsg')
-            self.load_tdma_config()
-        else:
-            print("#####TDMA not enabled####", flush = True)
-        # self.start_time = None
         self.can_transmit_flag = True
-        self.create_timer(0.02, self.dccl_pop_data) #pop data fequency
+        self.create_timer(1.0, self.dccl_pop_data) #pop data fequency
         self.last_push_time = time.time() ##my wait time for the push
-        # self.create_timer(self.tx_interval, self.reset_transmit_flag)
-
-    # def reset_transmit_flag(self):
-    #     #if still able transmit meaning no frame was transmitted, i will then transmit it
-    #     if self.can_transmit_flag and self.tdma_in_slot_check():
-    #         self.push_frame()
-    #     self.can_transmit_flag = True
 
     def load_comm_conifg(self):
         self.comm_list = self.get_parameter('comm_list').value
@@ -85,28 +62,40 @@ class TrafficControlRos(Node):
         self.output_buffer = {}
         self.output_msg_names = {}
 
+        # loop through the comm list
         for comm_name in self.comm_list:
+
+            self.dccl_tx_pub = self.create_publisher(ByteMultiArray, f'mvp_c2/traffic_control/{comm_name}/dccl_msg_controlled_tx', 10)  #to hardware
+            self.dccl_rx_sub = self.create_subscription(ByteMultiArray, f'mvp_c2/traffic_control/{comm_name}/dccl_msg_rx', self.dccl_rx_callback, 10) #from hardware
+
+
+            #load basic settings
             self.comm_settings[comm_name] = {
                 'max_frame_size': self.get_parameter(f'{comm_name}.max_frame_size').value,
-                'tx_interval':  self.get_parameter_or(f'{comm_name}.tx_interval', 1.0).value,
+                'tx_interval':  self.get_parameter_or(f'{comm_name}.tx_interval').value,
             }
-            
+
+            #load tdma settings
             self.tdma_settings[comm_name] = {
                 'enable': self.get_parameter_or(f'{comm_name}.tdma_enable',False).value,
                 'slot_id': self.get_parameter(f'{comm_name}.tdma.slot_id').value,
                 'role': self.get_parameter(f'{comm_name}.tdma.role').value
             }
+
+            #tdma master
             if self.tdma_settings[comm_name]['role'] == "master":
                 self.tdma_settings[comm_name].update({
-                'slot_duration': self.get_parameter(f'{comm_name}.tdma.slot_duration', 1.0).value,
-                'num_slots':  self.get_parameter(f'{comm_name}.tdma.num_slots', 1.0).value,
-                'slot_guard_time_ms': self.get_parameter(f'{comm_name}.tdma.slot_guard_time_ms',False).value,
+                'slot_duration': self.get_parameter(f'{comm_name}.tdma.slot_duration').value,
+                'num_slots':  self.get_parameter(f'{comm_name}.tdma.num_slots').value,
+                'slot_guard_time_ms': self.get_parameter(f'{comm_name}.tdma.slot_guard_time_ms').value,
                 #the sync message will be set after n frames
                 #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
-                'sync_slot_interval': self.get_parameter_or(f'{comm_name}.tdma.sync_slot_interval', -1).value,
-                'sync_msg_repeat_num': self.get_parameter_or(f'{comm_name}.tdma.sync_msg_repeat_num', 0).value 
+                'sync_slot_interval': self.get_parameter_or(f'{comm_name}.tdma.sync_slot_interval').value,
+                'sync_msg_repeat_num': self.get_parameter_or(f'{comm_name}.tdma.sync_msg_repeat_num').value 
 
             })
+                
+            #tdma slave
             else:
                 self.tdma_settings[comm_name].update({
                     'slot_duration': 0.0,
@@ -119,6 +108,7 @@ class TrafficControlRos(Node):
     
                 })
 
+            #dynamic buffer setting
             self.dynamic_buffer_settings[comm_name] ={
                 'max_total_size': self.get_parameter(f'{comm_name}.dynamic_buffer.max_total_size').value,
                 'buffer_overflow_remove_by_time': self.get_parameter(f'{comm_name}.dynamic_buffer.overflow_remove_by_time').value,
@@ -136,8 +126,12 @@ class TrafficControlRos(Node):
                 continue
 
             print("loading dccl message for dynamic buffer")
+
+            #load message settings
+            self.dynamic_buffer_message_rules[comm_name] = {}
+
             for msg_name in allowed_messages:
-                print(msg_name, flush = True)
+                # print(msg_name, flush = True)
                 self.dccl_codec.load(msg_name) #load proto data
                 self.dynamic_buffer_message_rules[comm_name][msg_name] = {
                     'priority': self.get_parameter(f'{comm_name}.message_rules.{msg_name}.priority').value,
@@ -148,41 +142,7 @@ class TrafficControlRos(Node):
             self.dynamic_buffer[comm_name] = DynamicBufferPython(max_total_size=self.dynamic_buffer_settings[comm_name]['max_total_size'],
                                                                  drop_by_time = self.dynamic_buffer_settings[comm_name]['buffer_overflow_remove_by_time'])
 
-            # BUffering parameter
-            self.output_buffer[comm_name] = bytearray()
-            self.output_msg_names[comm_name] = ""
-
-    def load_tdma_config(self):
-        #tdma starts in sync slot.
-        #the master will broadcast messages.
-        #Future the slave will response to the message in sequence, each one has time interval slot_duration/num_slots?
-        # so we can adapt the slot 
-        
-        self.tdma_slot_id = self.get_parameter('tdma.slot_id').value
-        self.tdma_role = self.get_parameter('tdma.role').value
-        self.tdma_flag = False
-        
-        if self.tdma_role == "master":
-            self.tdma_slot_duration = self.get_parameter_or('tdma.slot_duration', 1.0).value
-            self.tdma_num_slots = self.get_parameter_or('tdma.num_slots', 1 ).value  
-            self.tdma_slot_guard_time_ms = self.get_parameter_or('tdma.slot_guard_time_ms', 0).value  
-            #the sync message will be set after n frames
-            self.tdma_sync_slot_interval = self.get_parameter_or('tdma.sync_slot_interval', -1).value
-            #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
-            self.tdma_sync_msg_repeat_num = self.get_parameter_or('tdma.sync_msg_repeat_num', 0).value   
-            #if sync happens the tdma time can be reset 
-            self.master_sync_slot()
-
-        else:
-            self.tdma_slot_duration = 0
-            self.tdma_num_slots = 0 
-            self.tdma_slot_guard_time_ms = 0
-            #the sync message will be set after n frames
-            self.tdma_sync_slot_interval = 0
-            #how many sync message will be set? timed by slot_duration/tdma_sync_msg_repeat_num
-            self.tdma_sync_msg_repeat_num = 0  
-        
-        #set tdma_setup_flag to True for sync msg and handle.
+           
 
     def master_sync_slot(self):
 
@@ -382,62 +342,62 @@ class TrafficControlRos(Node):
             self.get_logger().error(f"Failed to process DCCL intake: {e}")
 
     def dccl_pop_data(self):
-        
-        if self.tdma_enable:
-            if not self.tdma_in_slot_check():
-                # print("Not in my slot")
-                return
+        print("looping")
+        # if self.tdma_enable:
+        #     if not self.tdma_in_slot_check():
+        #         # print("Not in my slot")
+        #         return
                 
-        if time.time()-self.last_push_time > self.tx_interval:
-            self.push_frame()
-            # print("Push wait time has reached", flush = True)
+        # if time.time()-self.last_push_time > self.tx_interval:
+        #     self.push_frame()
+        #     # print("Push wait time has reached", flush = True)
 
-        #not ready i will skip
-        # if not self.can_transmit_flag:
-            # return
+        # #not ready i will skip
+        # # if not self.can_transmit_flag:
+        #     # return
         
-        new_data, msg_name = self.dynamic_buffer.pop()
+        # new_data, msg_name = self.dynamic_buffer.pop()
 
-        if not new_data:
-            # self.get_logger().warn(
-            #         f"No data popped: [{self.dynamic_buffer._queue}]",
-            #         throttle_duration_sec=1.0
-            # )
-            return
+        # if not new_data:
+        #     # self.get_logger().warn(
+        #     #         f"No data popped: [{self.dynamic_buffer._queue}]",
+        #     #         throttle_duration_sec=1.0
+        #     # )
+        #     return
         
-        if msg_name in self.output_msg_names:
-            # self.get_logger().warn(
-            #         f"Skip the same message: [{msg_name}]",
-            #         throttle_duration_sec=1.0
-            # )
-            return
+        # if msg_name in self.output_msg_names:
+        #     # self.get_logger().warn(
+        #     #         f"Skip the same message: [{msg_name}]",
+        #     #         throttle_duration_sec=1.0
+        #     # )
+        #     return
 
-        #if new data will saturate by buffer
-        if self.output_buffer and (len(self.output_buffer) + len(new_data) > self.max_frame_size):
-            self.push_frame()
-            if msg_name:
-                if self.output_msg_names == "":
-                    self.output_msg_names = msg_name
-                else:
-                    self.output_msg_names += f", {msg_name}" # Add separator
+        # #if new data will saturate by buffer
+        # if self.output_buffer and (len(self.output_buffer) + len(new_data) > self.max_frame_size):
+        #     self.push_frame()
+        #     if msg_name:
+        #         if self.output_msg_names == "":
+        #             self.output_msg_names = msg_name
+        #         else:
+        #             self.output_msg_names += f", {msg_name}" # Add separator
             
-            # log the data for the next time
-            self.output_buffer.extend(new_data)
-            # self.start_time = None
-            return
+        #     # log the data for the next time
+        #     self.output_buffer.extend(new_data)
+        #     # self.start_time = None
+        #     return
         
-        #regular loop accumulating data
-        self.output_buffer.extend(new_data)
-        if msg_name:
-            if self.output_msg_names == "":
-                self.output_msg_names = msg_name
-            else:
-                self.output_msg_names += f", {msg_name}" # Add separator
+        # #regular loop accumulating data
+        # self.output_buffer.extend(new_data)
+        # if msg_name:
+        #     if self.output_msg_names == "":
+        #         self.output_msg_names = msg_name
+        #     else:
+        #         self.output_msg_names += f", {msg_name}" # Add separator
     
-        #if one dccl already exceed the max frame size
-        if len(self.output_buffer) >= self.max_frame_size:
-            self.push_frame()
-            # self.start_time = None
+        # #if one dccl already exceed the max frame size
+        # if len(self.output_buffer) >= self.max_frame_size:
+        #     self.push_frame()
+        #     # self.start_time = None
 
     def push_frame(self):
         out_msg = ByteMultiArray()

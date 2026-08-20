@@ -30,18 +30,18 @@ def generate_launch_description():
         #     ]
         # ),
 
-        Node(
-            package='mvp_c2',
-            namespace='reporter',
-            executable='mvp_c2_reporter_ros',
-            name='mvp_c2_reporter',
-            output='screen',
-            prefix=['stdbuf -o L'],
-            remappings=[
-                ('mvp_c2/reporter/dccl_msg_tx', 'mvp_c2/traffic_control/dccl_msg_tx'),
-                ('mvp_c2/reporter/dccl_msg_rx', 'mvp_c2/traffic_control/dccl_msg_controlled_rx'),
-            ]
-        ),
+        # Node(
+        #     package='mvp_c2',
+        #     namespace='reporter',
+        #     executable='mvp_c2_reporter_ros',
+        #     name='mvp_c2_reporter',
+        #     output='screen',
+        #     prefix=['stdbuf -o L'],
+        #     remappings=[
+        #         ('mvp_c2/reporter/dccl_msg_tx', 'mvp_c2/traffic_control/dccl_msg_tx'),
+        #         ('mvp_c2/reporter/dccl_msg_rx', 'mvp_c2/traffic_control/dccl_msg_controlled_rx'),
+        #     ]
+        # ),
 
         Node(
             package='mvp_c2',
