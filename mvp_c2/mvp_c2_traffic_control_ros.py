@@ -35,12 +35,10 @@ class TrafficControlRos(Node):
         dccl.loadProtoFile(proto_path)
         self.dccl_codec = dccl.Codec()
 
-        #load comm types and settings
-        self.load_comm_conifg()
+        self.dccl_codec.load('TdmaMasterSyncMsg')
 
-         # initialize the output buffer
-        self.output_buffer = bytearray()
-        self.output_msg_names = ""
+        
+
         
         #ros stuff
         self.dccl_tx_sub = self.create_subscription(ByteMultiArray, 'mvp_c2/traffic_control/dccl_msg_tx', self.dccl_tx_callback, 10) #from reporter/commander
@@ -64,10 +62,12 @@ class TrafficControlRos(Node):
             'mvp_c2/traffic_control/get_all_comms',
             self.get_all_comm_callback
         )
-        
+
+        #load comm types and settings
+        self.load_comm_conifg()
         print("setup complete")
 
-        # self.tdma_enable = self.get_parameter_or('tdma_enable', False).value
+        
 
         self.can_transmit_flag = True
         self.create_timer(1.0, self.dccl_pop_data) #pop data fequency
@@ -79,15 +79,13 @@ class TrafficControlRos(Node):
         self.comm_settings = {}
         self.tdma_settings = {}
         self.dynamic_buffer_settings = {}
-        self.dynamic_buffer = {}
         self.dynamic_buffer_message_rules = {}
-        self.output_buffer = {}
-        self.output_msg_names = {}
 
         self.current_comm = self.comm_list[0]
         # loop through the comm list
         for comm_name in self.comm_list:
 
+            #setup sub and pub
             self.self.dccl_tx_pubs[comm_name] = self.create_publisher(
                                                 ByteMultiArray, 
                                                 f'mvp_c2/traffic_control/{comm_name}/dccl_msg_controlled_tx', 
@@ -100,13 +98,40 @@ class TrafficControlRos(Node):
                 10
             )  #from hardware
             
-
-
             #load basic settings
             self.comm_settings[comm_name] = {
                 'max_frame_size': self.get_parameter(f'{comm_name}.max_frame_size').value,
                 'tx_interval':  self.get_parameter_or(f'{comm_name}.tx_interval').value,
             }
+
+            #load dynamic buffer setting
+            self.dynamic_buffer_settings[comm_name] ={
+                'max_total_size': self.get_parameter(f'{comm_name}.dynamic_buffer.max_total_size').value,
+                'buffer_overflow_remove_by_time': self.get_parameter(f'{comm_name}.dynamic_buffer.overflow_remove_by_time').value,
+                'msgs_list': self.get_parameter(f'{comm_name}.dynamic_buffer.dccl_intake_message_list').value
+            }
+            
+            #Safely skip the messages if there is no conifguration
+            allowed_messages = (self.dynamic_buffer_settings[comm_name]['msgs_list'] or [])
+            # self.allowed_messages = self.dynamic_buffer_settings[comm_name]['msgs_list'].value if self.dynamic_buffer_settings[comm_name]['msgs_list'].value is not None else []
+            if not allowed_messages:
+                self.get_logger().warn("No messages found in 'dccl_intake_message_list'. Buffer will be idle.")
+                self.dynamic_buffer_message_rules[comm_name] = {}
+                continue
+
+            print("loading dccl message for dynamic buffer")
+
+            #load message settings
+            self.dynamic_buffer_message_rules[comm_name] = {}
+
+            for msg_name in allowed_messages:
+                # print(msg_name, flush = True)
+                self.dccl_codec.load(msg_name) #load proto data
+                self.dynamic_buffer_message_rules[comm_name][msg_name] = {
+                    'priority': self.get_parameter(f'{comm_name}.message_rules.{msg_name}.priority').value,
+                    'ttl_seconds':      self.get_parameter(f'{comm_name}.message_rules.{msg_name}.ttl_seconds').value,
+                    'group':    msg_name
+                }
 
             #load tdma settings
             self.tdma_settings[comm_name] = {
@@ -141,40 +166,9 @@ class TrafficControlRos(Node):
     
                 })
 
-            #dynamic buffer setting
-            self.dynamic_buffer_settings[comm_name] ={
-                'max_total_size': self.get_parameter(f'{comm_name}.dynamic_buffer.max_total_size').value,
-                'buffer_overflow_remove_by_time': self.get_parameter(f'{comm_name}.dynamic_buffer.overflow_remove_by_time').value,
-                'msgs_list': self.get_parameter(f'{comm_name}.dynamic_buffer.dccl_intake_message_list').value
-            }
+        self.reset_comm(self.comm_list[0])
+
             
-            #Safely skip the messages if there is no conifguration
-            allowed_messages = (self.dynamic_buffer_settings[comm_name]['msgs_list'] or [])
-            # self.allowed_messages = self.dynamic_buffer_settings[comm_name]['msgs_list'].value if self.dynamic_buffer_settings[comm_name]['msgs_list'].value is not None else []
-            if not allowed_messages:
-                self.get_logger().warn("No messages found in 'dccl_intake_message_list'. Buffer will be idle.")
-                self.dynamic_buffer_message_rules[comm_name] = {}
-                self.dynamic_buffer[comm_name] = DynamicBufferPython(max_total_size=self.dynamic_buffer_settings[comm_name]['max_total_size'], 
-                                                          drop_by_time = self.dynamic_buffer_settings[comm_name]['buffer_overflow_remove_by_time'])
-                continue
-
-            print("loading dccl message for dynamic buffer")
-
-            #load message settings
-            self.dynamic_buffer_message_rules[comm_name] = {}
-
-            for msg_name in allowed_messages:
-                # print(msg_name, flush = True)
-                self.dccl_codec.load(msg_name) #load proto data
-                self.dynamic_buffer_message_rules[comm_name][msg_name] = {
-                    'priority': self.get_parameter(f'{comm_name}.message_rules.{msg_name}.priority').value,
-                    'ttl_seconds':      self.get_parameter(f'{comm_name}.message_rules.{msg_name}.ttl_seconds').value,
-                    'group':    msg_name
-                }
-    
-            self.dynamic_buffer[comm_name] = DynamicBufferPython(max_total_size=self.dynamic_buffer_settings[comm_name]['max_total_size'],
-                                                                 drop_by_time = self.dynamic_buffer_settings[comm_name]['buffer_overflow_remove_by_time'])
-
     def get_current_comm_callback(self, request, response):
         response.success = True
         response.message = self.current_comm
@@ -186,17 +180,56 @@ class TrafficControlRos(Node):
         return response
     
     def set_comm_callback(self, request, response):
-        self.current_comm = request.data
-
-        self.output_buffer = bytearray()
-        self.output_msg_names = ""
-
         #resetting the comm and buffer
-        
-        response.success = True
-        response.message = f'comm is set to {request.data}'
+        flag = self.reset_comm(request.data)
+        if flag:
+            response.success = True
+            response.message = f'comm is set to {request.data}'
+        else:
+            response.success = True
+            response.message = f'wrong comm name'
         return response
     
+    def reset_comm(self, comm_name):
+        if comm_name in self.comm_list:
+            print(f"Found: {comm_name}")
+
+            self.max_frame_size = self.comm_settings[comm_name]['max_frame_size']
+            self.tx_interval = self.comm_settings[comm_name]['tx_interval']
+            self.dynamic_buffer = DynamicBufferPython(max_total_size=self.dynamic_buffer_settings[comm_name]['max_total_size'],
+                                                        drop_by_time = self.dynamic_buffer_settings[comm_name]['buffer_overflow_remove_by_time'])
+            
+            self.message_rules = self.dynamic_buffer_message_rules[comm_name]
+            self.tdma_enable = self.tdma_settings[comm_name]['enable']
+            self.tdma_slot_id = self.tdma_settings[comm_name]['slot_id']
+            self.tdma_role = self.tdma_settings[comm_name]['role']
+
+            if self.tdma_enable:
+                self.tdma_flag = False
+                if self.tdma_role == "master":
+                    self.tdma_slot_duration = self.tdma_settings[comm_name]['slot_duration']
+                    self.tdma_num_slots = self.tdma_settings[comm_name]['num_slots']
+                    self.tdma_slot_guard_time_ms = self.tdma_settings[comm_name]['slot_guard_time_ms']
+                    self.tdma_sync_slot_interval = self.tdma_settings[comm_name]['sync_slot_interval']
+                    self.tdma_sync_msg_repeat_num = self.tdma_settings[comm_name]['sync_msg_repeat_num']
+                    print("#####TDMA  enabled####", flush = True)
+                    self.master_sync_slot()
+                else:
+                    self.tdma_slot_duration = 0.0
+                    self.tdma_num_slots = 0
+                    self.tdma_slot_guard_time_ms = 0
+                    self.tdma_sync_slot_interval = 0
+                    self.tdma_sync_msg_repeat_num = 0
+                                
+            self.last_push_time = time.time() ##my wait time for the push
+             # initialize the output buffer
+            self.output_buffer = bytearray()
+            self.output_msg_names = ""
+            self.current_comm = comm_name
+            return True
+        else:
+            return False
+
 
     def master_sync_slot(self):
 
@@ -464,7 +497,7 @@ class TrafficControlRos(Node):
         self.last_push_time = time.time()
         if self.output_buffer:
             out_msg.data = bytearray(self.output_buffer)
-            self.dccl_tx_pub.publish(out_msg)
+            self.dccl_tx_pub[self.current_comm].publish(out_msg)
             # self.get_logger().info(f"Buffer data length: {len(out_msg.data)}")
             name_msg = String()
             name_msg.data = self.output_msg_names

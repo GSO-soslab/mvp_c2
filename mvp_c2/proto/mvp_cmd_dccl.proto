@@ -20,8 +20,7 @@ message PWM{
     required double time = 1 [ (dccl.field) = {min: 1750000000 max: 1800000000 precision: 1} ];
     required int32 local_id = 2 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
     required int32 remote_id = 3 [ (dccl.field) = {min: 0 max: 10 precision: 0} ];
-    required int32 index = 4 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
-    required double data = 5 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 2} ];
+    required double data = 5 [ (dccl.field) = {min: -1.0 max: 1.0 precision: 2 max_repeat: 10} ];
 }
 
 message Odometry{
@@ -224,7 +223,6 @@ message ResetDatum{
 }
 
 
-
 //systems related
 message RosLaunch{
     option (dccl.msg) = { codec_version: 4
@@ -265,8 +263,18 @@ message TdmaSlaveSyncMsg{
                           id: 52
                           max_bytes: 32 };
     required double time = 1 [ (dccl.field) = {min: 1750000000 max: 1800000000 precision: 1} ];
-    required int32 slot_id = 6 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
+    required int32 slot_id = 2 [ (dccl.field) = {min: 0 max: 100 precision: 0} ];
 }
+
+message ReportTrafficMethod{
+    option (dccl.msg) = { codec_version: 4
+                          id: 53
+                          max_bytes: 16 };
+    required double time = 1 [ (dccl.field) = {min: 1750000000 max: 1800000000 precision: 1} ];
+    required string method = 2 [(dccl.field) = { max_length: 6 }];;
+}
+
+
 
 
 
